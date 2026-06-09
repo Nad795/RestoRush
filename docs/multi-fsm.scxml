@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  RestoRush — Multi-FSM Architecture
+  ===================================
+  Five concurrent Finite State Machines run in parallel each simulation tick.
+
+  Execution model
+  ───────────────
+  • Zustand stores plain strings for every entity's current state.
+  • reconstituteFSM(config, currentState) rebuilds a transient FSM at any state.
+  • stepEntity(config, current, target) performs a single safe transition.
+  • All systems call stepEntity; invalid transitions are silently no-ops.
+
+  Timing constants (src/utils/constants.ts)
+  ──────────────────────────────────────────
+  PATIENCE_DRAIN_PER_S = 3 / s
+  PATIENCE_ANGER_THRESHOLD = 0  (implicit: patience ≤ 0)
+  EAT_TIME_MS  = 9 000 ms
+  COOK_TIME_MS = 7 000 ms
+  ORDER_WAIT_MS = 2 500 ms
+  SERVE_WAIT_MS = 2 000 ms
+  CLEAN_TABLE_MS = 2 000 ms
+  DAY_DURATION_MS = 90 000 ms
+-->
+<scxml
+  xmlns="http://www.w3.org/2005/07/scxml"
+  version="1.0"
+  name="RestoRush_MultiFSM"
+  initial="Simulation">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       TOP-LEVEL: all five FSMs run concurrently (parallel regions)
+       ═══════════════════════════════════════════════════════════════ -->
+  <parallel id="Simulation">
+
+    <!-- ╔═══════════════════════════════════════════════════════════╗
+         ║  1. CUSTOMER FSM                                          ║
+         ║  Managed by: src/systems/customerSystem.ts               ║
+         ║  Entity:     src/entities/customer/types.ts              ║
+         ╚═══════════════════════════════════════════════════════════╝ -->
+    <state id="CustomerFSM" initial="SPAWN">
+
+      <state id="SPAWN">
+        <!-- Customer just entered the restaurant at the entrance door -->
+        <transition target="FIND_TABLE">
+          <!-- Unconditional: immediately look for a free table -->
+        </transition>
+      </state>
+
+      <state id="FIND_TABLE">
+        <!-- Walk to entrance, scan table list for state=AVAILABLE -->
+        <transition target="ORDERING" cond="freeTableExists">
+          <!-- Table found: claim it (state→OCCUPIED), build walk path to seat -->
+          <!-- Seat offset: x = table.x - 42, y = table.y (left side of table) -->
+        </transition>
+        <transition target="LEAVING" cond="!freeTableExists">
+          <!-- Restaurant full: customer leaves immediately without ordering -->
+        </transition>
+      </state>
+
+      <state id="ORDERING">
+        <!-- Customer is seated; create Order entity and link orderId -->
+        <transition target="WAITING">
+          <!-- Order created → transition immediately to wait for food -->
+        </transition>
+      </state>
+
+      <state id="WAITING">
+        <!-- Patience drains: patience -= PATIENCE_DRAIN_PER_S * (delta/1000) -->
+        <transition target="EATING" cond="order.state === 'SERVED'">
+          <!-- Waiter delivered food: mark Order COMPLETED, begin eating -->
+        </transition>
+        <transition target="ANGRY" cond="patience &lt;= PATIENCE_ANGER_THRESHOLD">
+          <!-- Ran out of patience: apply RATING_HIT_ANGRY penalty, increment angryCount -->
+        </transition>
+      </state>
+
+      <state id="ANGRY">
+        <!-- Brief rage state; no additional action needed here -->
+        <transition target="LEAVING">
+          <!-- Walk out without paying -->
+        </transition>
+      </state>
+
+      <state id="EATING">
+        <!-- eatTimer accumulates; customer eats for EAT_TIME_MS -->
+        <transition target="PAYING" cond="eatTimer &gt;= EAT_TIME_MS">
+          <!-- Meal finished: proceed to pay -->
+        </transition>
+      </state>
+
+      <state id="PAYING">
+        <!-- Atomic: add spendingAmount to restaurant funds -->
+        <!-- addMoney(spendingAmount), recordServed(spendingAmount) -->
+        <!-- setRating(min(5, rating + RATING_RECOVER_HAPPY)) -->
+        <transition target="LEAVING">
+          <!-- Payment processed: head for the exit -->
+        </transition>
+      </state>
+
+      <state id="LEAVING">
+        <!-- Two-phase exit: -->
+        <!--   Phase 1 (tableId set): free table (→DIRTY), build path to entrance -->
+        <!--   Phase 2 (pathIndex >= path.length): remove customer from simulation -->
+        <final id="LEAVING_DONE"/>
+      </state>
+
+    </state>
+    <!-- end CustomerFSM -->
+
+
+    <!-- ╔═══════════════════════════════════════════════════════════╗
+         ║  2. WAITER FSM                                            ║
+         ║  Managed by: src/systems/waiterSystem.ts                 ║
+         ║  Entity:     src/entities/waiter/types.ts                ║
+         ╚═══════════════════════════════════════════════════════════╝ -->
+    <state id="WaiterFSM" initial="IDLE">
+
+      <state id="IDLE">
+        <!-- Waiter is at kitchen slot; polling for unclaimed PENDING orders -->
+        <transition target="TAKE_ORDER" cond="pendingOrderExists &amp;&amp; !claimedThisTick">
+          <!-- Claim order (assignedOrderId, assignedCustomerId) -->
+          <!-- Build path to table right side: x = table.x + 48, y = table.y -->
+        </transition>
+      </state>
+
+      <state id="TAKE_ORDER">
+        <!-- Walk to customer's table; taskTimer counts down ORDER_WAIT_MS -->
+        <transition target="DELIVER_TO_KITCHEN" cond="reachedTable &amp;&amp; taskTimer &gt;= ORDER_WAIT_MS">
+          <!-- Order taken: mark Order RECEIVED, walk to kitchen slot -->
+          <!-- kitchenSlot: x = 80 + ((waiterNum-1)%6)*64, y = KITCHEN_Y -->
+        </transition>
+      </state>
+
+      <state id="DELIVER_TO_KITCHEN">
+        <!-- Walk to kitchen counter; hand off order to chef queue -->
+        <transition target="PICKUP_FOOD" cond="reachedKitchen">
+          <!-- Order handed to kitchen: mark Order COOKING, wait for READY -->
+        </transition>
+      </state>
+
+      <state id="PICKUP_FOOD">
+        <!-- Polling at kitchen slot for assigned order.state === 'READY' -->
+        <transition target="SERVE_FOOD" cond="order.state === 'READY'">
+          <!-- Food ready: mark Order PICKUP, build path back to customer's table -->
+        </transition>
+        <transition target="IDLE" cond="!orderExists">
+          <!-- Guard: orphan order cleaned up by orderSystem — reset waiter -->
+        </transition>
+      </state>
+
+      <state id="SERVE_FOOD">
+        <!-- Walk to table; taskTimer counts down SERVE_WAIT_MS -->
+        <transition target="IDLE" cond="reachedTable &amp;&amp; taskTimer &gt;= SERVE_WAIT_MS">
+          <!-- Food served: mark Order SERVED, clear assignments, return to kitchen -->
+        </transition>
+      </state>
+
+    </state>
+    <!-- end WaiterFSM -->
+
+
+    <!-- ╔═══════════════════════════════════════════════════════════╗
+         ║  3. CHEF FSM                                              ║
+         ║  Managed by: src/systems/chefSystem.ts                   ║
+         ║  Entity:     src/entities/chef/types.ts                  ║
+         ╚═══════════════════════════════════════════════════════════╝ -->
+    <state id="ChefFSM" initial="IDLE">
+
+      <state id="IDLE">
+        <!-- Chef stands at stove waiting for a COOKING order -->
+        <transition target="COOKING" cond="cookingOrderExists &amp;&amp; !claimedThisTick">
+          <!-- Claim order (assignedOrderId) -->
+          <!-- cookTimer reset to 0 -->
+        </transition>
+      </state>
+
+      <state id="COOKING">
+        <!-- cookTimer accumulates; stove animation active -->
+        <transition target="FOOD_READY" cond="cookTimer &gt;= COOK_TIME_MS">
+          <!-- Dish done: mark Order READY -->
+        </transition>
+        <transition target="IDLE" cond="!orderExists">
+          <!-- Guard: order was orphaned while cooking — abort -->
+        </transition>
+      </state>
+
+      <state id="FOOD_READY">
+        <!-- Dish sits on pass-through counter; pot lid animation changes -->
+        <transition target="IDLE" cond="order.state === 'PICKUP'">
+          <!-- Waiter picked up food: chef is free for next order -->
+        </transition>
+      </state>
+
+    </state>
+    <!-- end ChefFSM -->
+
+
+    <!-- ╔═══════════════════════════════════════════════════════════╗
+         ║  4. TABLE FSM                                             ║
+         ║  Managed by: src/systems/tableSystem.ts                  ║
+         ║  Entity:     src/entities/table/types.ts                 ║
+         ╚═══════════════════════════════════════════════════════════╝ -->
+    <state id="TableFSM" initial="AVAILABLE">
+
+      <state id="AVAILABLE">
+        <!-- Table is clean, empty, ready for a new customer -->
+        <!-- Visual: cream tablecloth, empty plates, condiment bottles -->
+        <transition target="OCCUPIED" cond="customerAssigned">
+          <!-- Customer claimed table in FIND_TABLE: set occupiedBy = customer.id -->
+        </transition>
+      </state>
+
+      <state id="OCCUPIED">
+        <!-- Customer is seated at this table -->
+        <!-- Visual: orange food on plates (once order arrives) -->
+        <transition target="DIRTY" cond="customerLeft">
+          <!-- Customer state transitions to LEAVING: free table -->
+        </transition>
+      </state>
+
+      <state id="DIRTY">
+        <!-- Table needs cleaning before it can be reused -->
+        <!-- Visual: dark stain blobs, dirty plate, food scraps -->
+        <!-- cleanTimer = 0 when entering this state -->
+        <transition target="CLEANING" cond="waiterAssignedToClean">
+          <!-- A free waiter starts cleaning (future feature) -->
+          <!-- Current impl: table auto-cleans via tableSystem after CLEAN_TABLE_MS -->
+        </transition>
+        <transition target="CLEANING" cond="cleanTimer &gt; 0">
+          <!-- Auto-clean: tableSystem increments cleanTimer each tick -->
+        </transition>
+      </state>
+
+      <state id="CLEANING">
+        <!-- cleanTimer accumulates until CLEAN_TABLE_MS -->
+        <!-- Visual: wet blue cloth, soap bubbles -->
+        <transition target="AVAILABLE" cond="cleanTimer &gt;= CLEAN_TABLE_MS">
+          <!-- Table cleaned: reset cleanTimer = 0, occupiedBy = null -->
+        </transition>
+      </state>
+
+    </state>
+    <!-- end TableFSM -->
+
+
+    <!-- ╔═══════════════════════════════════════════════════════════╗
+         ║  5. ORDER FSM                                             ║
+         ║  Managed by: src/systems/orderSystem.ts (+ other systems)║
+         ║  Entity:     src/entities/order/types.ts                 ║
+         ╚═══════════════════════════════════════════════════════════╝ -->
+    <state id="OrderFSM" initial="PENDING">
+
+      <state id="PENDING">
+        <!-- Order created by customer; waiter not yet assigned -->
+        <transition target="RECEIVED" cond="waiterPickedUp">
+          <!-- Waiter arrived at table after ORDER_WAIT_MS: order acknowledged -->
+        </transition>
+        <transition target="COMPLETED" cond="customerGone">
+          <!-- Orphan cleanup (orderSystem): customer left before waiter arrived -->
+        </transition>
+      </state>
+
+      <state id="RECEIVED">
+        <!-- Waiter carrying order ticket to kitchen -->
+        <transition target="COOKING" cond="waiterReachedKitchen">
+          <!-- Waiter handed order to chef: chef starts cooking -->
+        </transition>
+        <transition target="COMPLETED" cond="customerGone">
+          <!-- Orphan cleanup -->
+        </transition>
+      </state>
+
+      <state id="COOKING">
+        <!-- Chef's cookTimer counts up to COOK_TIME_MS -->
+        <transition target="READY" cond="cookTimer &gt;= COOK_TIME_MS">
+          <!-- Chef sets order READY; dish on pass-through counter -->
+        </transition>
+        <transition target="COMPLETED" cond="customerGone">
+          <!-- Orphan cleanup: free assigned chef and waiter -->
+        </transition>
+      </state>
+
+      <state id="READY">
+        <!-- Dish sitting on counter waiting for waiter pickup -->
+        <transition target="PICKUP" cond="waiterPickedUpFood">
+          <!-- Waiter grabbed dish: heading to customer table -->
+        </transition>
+        <transition target="COMPLETED" cond="customerGone">
+          <!-- Orphan cleanup -->
+        </transition>
+      </state>
+
+      <state id="PICKUP">
+        <!-- Waiter walking to table with food; taskTimer counts SERVE_WAIT_MS -->
+        <transition target="SERVED" cond="waiterServed">
+          <!-- Waiter served food to customer -->
+        </transition>
+        <transition target="COMPLETED" cond="customerGone">
+          <!-- Orphan cleanup: free waiter assignment -->
+        </transition>
+      </state>
+
+      <state id="SERVED">
+        <!-- Plate on table; customer transitions to EATING -->
+        <!-- customerSystem calls stepEntity(ORDER,'SERVED','COMPLETED') -->
+        <transition target="COMPLETED">
+          <!-- Immediate: triggered by customerSystem when customer starts eating -->
+        </transition>
+      </state>
+
+      <state id="COMPLETED">
+        <!-- Terminal state: order lifecycle complete (or abandoned) -->
+        <!-- Order remains in store until garbage-collected by orderSystem -->
+      </state>
+
+    </state>
+    <!-- end OrderFSM -->
+
+  </parallel>
+  <!-- end Simulation parallel region -->
+
+</scxml>
