@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { stepEntity } from '../stepEntity';
 import { reconstituteFSM } from '../reconstituteFSM';
+import type { WaiterState } from '../../entities/waiter/types';
 import {
   CUSTOMER_FSM_CONFIG,
   WAITER_FSM_CONFIG,
@@ -94,10 +95,10 @@ describe('Customer FSM — no table path', () => {
 
 describe('Waiter FSM', () => {
   it('cycles through full work loop back to IDLE', () => {
-    const sequence: Array<Parameters<typeof stepEntity>[2]> = [
+    const sequence = [
       'TAKE_ORDER', 'DELIVER_TO_KITCHEN', 'PICKUP_FOOD', 'SERVE_FOOD', 'IDLE',
-    ];
-    let state = stepEntity(WAITER_FSM_CONFIG, 'IDLE', 'TAKE_ORDER');
+    ] as const;
+    let state: WaiterState = stepEntity(WAITER_FSM_CONFIG, 'IDLE', 'TAKE_ORDER');
     expect(state).toBe('TAKE_ORDER');
 
     for (let i = 1; i < sequence.length; i++) {
