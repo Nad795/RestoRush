@@ -1,65 +1,57 @@
+import { useEffect, useState } from 'react';
 import type { Customer } from '../../entities/customer/types';
-import { useSimulationStore } from '../../store/useSimulationStore';
-
-const STATE_COLOR: Record<Customer['state'], string> = {
-  SPAWN:      'bg-gray-500',
-  FIND_TABLE: 'bg-yellow-500',
-  ORDERING:   'bg-blue-500',
-  WAITING:    'bg-blue-400',
-  EATING:     'bg-green-500',
-  PAYING:     'bg-purple-500',
-  LEAVING:    'bg-gray-400',
-  ANGRY:      'bg-red-500',
-};
-
-const STATE_ICON: Record<Customer['state'], string> = {
-  SPAWN:      '🚶',
-  FIND_TABLE: '🔍',
-  ORDERING:   '📋',
-  WAITING:    '⏳',
-  EATING:     '🍽',
-  PAYING:     '💳',
-  LEAVING:    '🚪',
-  ANGRY:      '😠',
-};
-
-// Deterministic offset from id so position never jitters between renders
-function stableOffset(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) & 0xffff;
-  return (hash % 40) - 20;
-}
+import { PixelSprite } from './PixelSprite';
 
 interface Props { customer: Customer }
 
 export function CustomerView({ customer }: Props) {
-  const tables = useSimulationStore((s) => s.tables);
-  const table = tables.find((t) => t.id === customer.tableId);
+  const [frame, setFrame] = useState(0);
+  const moving = customer.state === 'SPAWN' || customer.state === 'FIND_TABLE' || customer.state === 'LEAVING';
 
-  const offset = stableOffset(customer.id);
-  const x = table ? table.x + 32 : 640 + (offset * 0.5);
-  const y = table ? table.y + offset * 0.3 : 30 + Math.abs(offset);
+  // Walk animation
+  useEffect(() => {
+    if (!moving) return;
+    const id = setInterval(() => setFrame(f => f === 0 ? 1 : 0), 200);
+    return () => clearInterval(id);
+  }, [moving]);
+
+  const spriteType = customer.state === 'ANGRY' ? 'angry_customer' : 'customer';
 
   const patienceColor =
-    customer.patience > 50 ? 'bg-green-500' :
-    customer.patience > 20 ? 'bg-yellow-500' : 'bg-red-500';
+    customer.patience > 50 ? '#22c55e' :
+    customer.patience > 20 ? '#eab308' : '#ef4444';
 
   return (
     <div
       className="absolute flex flex-col items-center pointer-events-none select-none"
-      style={{ left: x - 16, top: y - 16, zIndex: 10 }}
+      style={{
+        left: customer.posX - 12,
+        top: customer.posY - 24,
+        transition: 'left 0.8s ease-in-out, top 0.8s ease-in-out',
+        zIndex: 20,
+      }}
     >
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-lg ${STATE_COLOR[customer.state]}`}
-      >
-        {STATE_ICON[customer.state]}
+      <PixelSprite type={spriteType} walking={moving} frame={frame} />
+
+      {/* State label */}
+      <div style={{
+        fontSize: 8,
+        color: '#aaa',
+        marginTop: 1,
+        whiteSpace: 'nowrap',
+        fontFamily: 'monospace',
+      }}>
+        {customer.menuItem}
       </div>
+
+      {/* Patience bar */}
       {(customer.state === 'WAITING' || customer.state === 'ANGRY') && (
-        <div className="w-8 h-1 bg-gray-700 rounded mt-0.5">
-          <div
-            className={`h-full rounded transition-all duration-500 ${patienceColor}`}
-            style={{ width: `${customer.patience}%` }}
-          />
+        <div style={{ width: 24, height: 3, background: '#374151', borderRadius: 0, marginTop: 1 }}>
+          <div style={{
+            width: `${customer.patience}%`, height: '100%',
+            background: patienceColor,
+            transition: 'width 0.5s, background 0.5s',
+          }} />
         </div>
       )}
     </div>

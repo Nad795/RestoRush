@@ -16,5 +16,7 @@ export function createCustomer(): Customer {
     waitTimer: 0,
     eatTimer: 0,
     menuItem: MENU_ITEMS[Math.floor(Math.random() * MENU_ITEMS.length)],
+    posX: 685,
+    posY: 210,
   };
 }

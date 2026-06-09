@@ -11,4 +11,6 @@ export interface Waiter {
   assignedOrderId: string | null;
   assignedCustomerId: string | null;
   taskTimer: number; // ms elapsed in current task
+  posX: number;
+  posY: number;
 }

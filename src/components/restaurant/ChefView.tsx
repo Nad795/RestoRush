@@ -1,42 +1,49 @@
+import { useEffect, useState } from 'react';
 import type { Chef } from '../../entities/chef/types';
+import { PixelSprite } from './PixelSprite';
 import { COOK_TIME_MS } from '../../utils/constants';
-
-const STATE_ICON: Record<Chef['state'], string> = {
-  IDLE:       '👨‍🍳',
-  COOKING:    '🔥',
-  FOOD_READY: '✅',
-};
 
 interface Props { chef: Chef; index: number }
 
 export function ChefView({ chef, index }: Props) {
-  const progress = chef.state === 'COOKING'
-    ? Math.min(100, (chef.cookTimer / COOK_TIME_MS) * 100)
-    : 0;
+  const [frame, setFrame] = useState(0);
+  const cooking = chef.state === 'COOKING';
+
+  useEffect(() => {
+    if (!cooking) return;
+    const id = setInterval(() => setFrame(f => f === 0 ? 1 : 0), 300);
+    return () => clearInterval(id);
+  }, [cooking]);
+
+  const x = 80 + index * 64;
+  const progress = cooking ? Math.min(100, (chef.cookTimer / COOK_TIME_MS) * 100) : 0;
 
   return (
     <div
       className="absolute flex flex-col items-center select-none"
-      style={{ right: 20 + index * 60, bottom: 16, zIndex: 10 }}
+      style={{ left: x - 10, bottom: 4, zIndex: 15 }}
     >
-      <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center text-lg shadow ${
-        chef.state === 'FOOD_READY'
-          ? 'bg-green-700 border-green-400'
-          : chef.state === 'COOKING'
-          ? 'bg-orange-800 border-orange-500'
-          : 'bg-gray-700 border-gray-500'
-      }`}>
-        {STATE_ICON[chef.state]}
-      </div>
-      {chef.state === 'COOKING' && (
-        <div className="w-10 h-1 bg-gray-700 rounded mt-0.5">
-          <div
-            className="h-full bg-orange-400 rounded transition-all"
-            style={{ width: `${progress}%` }}
-          />
+      <PixelSprite type="chef" walking={cooking} frame={frame} />
+
+      {/* Cook progress bar */}
+      {cooking && (
+        <div style={{ width: 28, height: 3, background: '#374151', marginTop: 2 }}>
+          <div style={{
+            width: `${progress}%`, height: '100%',
+            background: '#f97316',
+            transition: 'width 0.3s',
+          }} />
         </div>
       )}
-      <span className="text-[9px] text-orange-300 mt-0.5">{chef.state}</span>
+
+      {/* Food ready indicator */}
+      {chef.state === 'FOOD_READY' && (
+        <div style={{ fontSize: 14, marginTop: 2 }}>🍽</div>
+      )}
+
+      <div style={{ fontSize: 8, color: '#fb923c', marginTop: 1, fontFamily: 'monospace' }}>
+        {chef.state === 'IDLE' ? 'idle' : chef.state === 'COOKING' ? 'cooking...' : 'ready!'}
+      </div>
     </div>
   );
 }

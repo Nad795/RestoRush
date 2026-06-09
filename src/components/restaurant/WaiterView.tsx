@@ -1,28 +1,36 @@
+import { useEffect, useState } from 'react';
 import type { Waiter } from '../../entities/waiter/types';
+import { PixelSprite } from './PixelSprite';
 
-const STATE_ICON: Record<Waiter['state'], string> = {
-  IDLE:               '🧑',
-  TAKE_ORDER:         '📋',
-  DELIVER_TO_KITCHEN: '🏃',
-  PICKUP_FOOD:        '⏳',
-  SERVE_FOOD:         '🍽',
-};
-
-// Waiters stand in a row at the bottom of the floor
 interface Props { waiter: Waiter; index: number }
 
-export function WaiterView({ waiter, index }: Props) {
+export function WaiterView({ waiter }: Props) {
+  const [frame, setFrame] = useState(0);
+  const moving = waiter.state !== 'IDLE' && waiter.state !== 'PICKUP_FOOD';
+
+  useEffect(() => {
+    if (!moving) return;
+    const id = setInterval(() => setFrame(f => f === 0 ? 1 : 0), 180);
+    return () => clearInterval(id);
+  }, [moving]);
+
   return (
     <div
-      className="absolute flex flex-col items-center select-none"
-      style={{ left: 20 + index * 60, bottom: 16, zIndex: 10 }}
+      className="absolute flex flex-col items-center pointer-events-none select-none"
+      style={{
+        left: waiter.posX - 10,
+        top: waiter.posY - 24,
+        transition: 'left 0.6s ease-in-out, top 0.6s ease-in-out',
+        zIndex: 25,
+      }}
     >
-      <div className="w-10 h-10 rounded-full bg-blue-700 border-2 border-blue-400 flex items-center justify-center text-lg shadow">
-        {STATE_ICON[waiter.state]}
+      <PixelSprite type="waiter" walking={moving} frame={frame} />
+      <div style={{ fontSize: 8, color: '#93c5fd', marginTop: 1, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+        {waiter.state === 'IDLE' ? 'idle' :
+         waiter.state === 'TAKE_ORDER' ? 'taking order' :
+         waiter.state === 'DELIVER_TO_KITCHEN' ? 'to kitchen' :
+         waiter.state === 'PICKUP_FOOD' ? 'waiting' : 'serving'}
       </div>
-      <span className="text-[9px] text-blue-300 mt-0.5 max-w-[56px] text-center leading-tight">
-        {waiter.state.replace(/_/g, ' ')}
-      </span>
     </div>
   );
 }

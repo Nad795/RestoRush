@@ -1,7 +1,7 @@
 import { useSimulationStore } from '../store/useSimulationStore';
 import { stepEntity } from '../fsm/stepEntity';
 import { WAITER_FSM_CONFIG, ORDER_FSM_CONFIG } from '../fsm/configs';
-import { ORDER_WAIT_MS, SERVE_WAIT_MS } from '../utils/constants';
+import { ORDER_WAIT_MS, SERVE_WAIT_MS, KITCHEN_Y } from '../utils/constants';
 
 export function runWaiterSystem(delta: number): void {
   const { waiters, orders, updateWaiter, updateOrder } = useSimulationStore.getState();
@@ -19,11 +19,14 @@ export function runWaiterSystem(delta: number): void {
         );
         if (pendingOrder) {
           claimedThisTick.add(pendingOrder.id); // reserve for this tick
+          const tables = useSimulationStore.getState().tables;
+          const orderTable = tables.find((t) => t.id === pendingOrder.tableId);
           updateWaiter(waiter.id, {
             state: stepEntity(WAITER_FSM_CONFIG, 'IDLE', 'TAKE_ORDER'),
             assignedOrderId: pendingOrder.id,
             assignedCustomerId: pendingOrder.customerId,
             taskTimer: 0,
+            ...(orderTable ? { posX: orderTable.x, posY: orderTable.y - 25 } : {}),
           });
         }
         break;
@@ -55,6 +58,8 @@ export function runWaiterSystem(delta: number): void {
         updateWaiter(waiter.id, {
           state: stepEntity(WAITER_FSM_CONFIG, 'DELIVER_TO_KITCHEN', 'PICKUP_FOOD'),
           taskTimer: 0,
+          posX: 300,
+          posY: KITCHEN_Y,
         });
         break;
       }
@@ -71,9 +76,12 @@ export function runWaiterSystem(delta: number): void {
               taskTimer: 0,
             });
           } else if (order.state === 'READY') {
+            const tables = useSimulationStore.getState().tables;
+            const orderTable = tables.find((t) => t.id === order.tableId);
             updateWaiter(waiter.id, {
               state: stepEntity(WAITER_FSM_CONFIG, 'PICKUP_FOOD', 'SERVE_FOOD'),
               taskTimer: 0,
+              ...(orderTable ? { posX: orderTable.x, posY: orderTable.y - 25 } : {}),
             });
           }
         }
@@ -91,11 +99,14 @@ export function runWaiterSystem(delta: number): void {
               });
             }
           }
+          const kitchenX = 80 + (Number(waiter.id.replace(/\D/g, '')) % 8) * 60;
           updateWaiter(waiter.id, {
             state: stepEntity(WAITER_FSM_CONFIG, 'SERVE_FOOD', 'IDLE'),
             assignedOrderId: null,
             assignedCustomerId: null,
             taskTimer: 0,
+            posX: kitchenX,
+            posY: KITCHEN_Y,
           });
         } else {
           updateWaiter(waiter.id, { taskTimer: newTimer });

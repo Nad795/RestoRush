@@ -8,5 +8,7 @@ export function createWaiter(): Waiter {
     assignedOrderId: null,
     assignedCustomerId: null,
     taskTimer: 0,
+    posX: 120,
+    posY: 456,
   };
 }

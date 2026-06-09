@@ -33,3 +33,10 @@ export const RATING_RECOVER_HAPPY  = 0.04;  // slower recovery than penalty
 
 // Day length in real ms (speed-scaled)
 export const DAY_DURATION_MS = 90_000;     // 90s real-time = 1 game day at 1×
+
+// Floor layout coordinates (pixels)
+export const FLOOR_W = 720;
+export const FLOOR_H = 480;
+export const KITCHEN_Y = 456;         // waiter/chef idle Y
+export const ENTRANCE_X = 685;
+export const ENTRANCE_Y = 210;

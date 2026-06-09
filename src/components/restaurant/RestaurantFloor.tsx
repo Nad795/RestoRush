@@ -28,37 +28,24 @@ export function RestaurantFloor() {
             '#1f2937',
         }}
       >
-        {/* Dining area label */}
-        <div className="absolute top-2 left-3 text-[10px] text-gray-600 uppercase tracking-widest select-none">
-          Dining Area
-        </div>
-
-        {/* Entrance indicator */}
-        <div className="absolute top-2 right-3 text-xs text-gray-500 select-none">
-          🚪 Entrance
-        </div>
+        {/* Labels */}
+        <div className="absolute top-2 left-3 text-[10px] text-gray-600 uppercase tracking-widest select-none">Dining Area</div>
+        <div className="absolute top-2 right-3 text-xs text-gray-500 select-none">🚪 Entrance</div>
 
         {/* Tables */}
         {tables.map((t) => <TableView key={t.id} table={t} />)}
 
-        {/* Customers */}
+        {/* Customers — absolutely positioned by posX/posY */}
         {activeCustomers.map((c) => <CustomerView key={c.id} customer={c} />)}
+
+        {/* Waiters — absolutely positioned by posX/posY (move across whole floor) */}
+        {waiters.map((w, i) => <WaiterView key={w.id} waiter={w} index={i} />)}
 
         {/* Kitchen zone */}
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gray-900 border-t-2 border-gray-600">
-          <div className="absolute top-0 left-0 right-0 h-px bg-orange-900 opacity-50" />
-          <span className="absolute left-3 top-1 text-[10px] text-gray-500 uppercase tracking-widest select-none">
-            Kitchen
-          </span>
-
-          {/* Chefs — left side */}
-          <div className="absolute left-16 bottom-1 flex gap-3">
+          <span className="absolute left-3 top-1 text-[10px] text-gray-500 uppercase tracking-widest select-none">Kitchen</span>
+          <div className="absolute left-12 bottom-0 flex gap-2">
             {chefs.map((c, i) => <ChefView key={c.id} chef={c} index={i} />)}
-          </div>
-
-          {/* Waiters — right side */}
-          <div className="absolute right-4 bottom-1 flex gap-3 flex-row-reverse">
-            {waiters.map((w, i) => <WaiterView key={w.id} waiter={w} index={i} />)}
           </div>
         </div>
       </div>

@@ -9,6 +9,8 @@ import {
   EAT_TIME_MS,
   RATING_HIT_ANGRY,
   RATING_RECOVER_HAPPY,
+  ENTRANCE_X,
+  ENTRANCE_Y,
 } from '../utils/constants';
 
 export function runCustomerSystem(delta: number): void {
@@ -34,10 +36,14 @@ export function runCustomerSystem(delta: number): void {
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'FIND_TABLE', 'ORDERING'),
             tableId: freeTable.id,
+            posX: freeTable.x,
+            posY: freeTable.y - 25,
           });
         } else {
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'FIND_TABLE', 'LEAVING'),
+            posX: ENTRANCE_X,
+            posY: ENTRANCE_Y,
           });
         }
         break;
@@ -122,6 +128,7 @@ export function runCustomerSystem(delta: number): void {
             updateTable(customer.tableId, { state: 'DIRTY', occupiedBy: null });
           }
         }
+        updateCustomer(customer.id, { posX: ENTRANCE_X, posY: ENTRANCE_Y });
         removeCustomer(customer.id);
         break;
       }
