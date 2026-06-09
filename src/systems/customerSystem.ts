@@ -1,7 +1,7 @@
 import { useSimulationStore } from '../store/useSimulationStore';
 import { useRestaurantStore } from '../store/useRestaurantStore';
 import { stepEntity } from '../fsm/stepEntity';
-import { CUSTOMER_FSM_CONFIG } from '../fsm/configs';
+import { CUSTOMER_FSM_CONFIG, ORDER_FSM_CONFIG } from '../fsm/configs';
 import { createOrder } from '../entities/order/factory';
 import {
   PATIENCE_DRAIN_PER_S,
@@ -12,7 +12,7 @@ import {
 } from '../utils/constants';
 
 export function runCustomerSystem(delta: number): void {
-  const { customers, tables, orders, updateCustomer, removeCustomer, addOrder, updateTable } =
+  const { customers, tables, orders, updateCustomer, removeCustomer, addOrder, updateTable, updateOrder } =
     useSimulationStore.getState();
   const { addMoney, setRating, rating } = useRestaurantStore.getState();
 
@@ -26,16 +26,16 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'FIND_TABLE': {
-        const freeTable = tables.find((t) => t.state === 'AVAILABLE');
+        // Re-read tables from store so we see claims made earlier this same tick
+        const freshTables = useSimulationStore.getState().tables;
+        const freeTable = freshTables.find((t) => t.state === 'AVAILABLE');
         if (freeTable) {
-          // Claim table immediately so no other customer steals it this tick
           updateTable(freeTable.id, { state: 'OCCUPIED', occupiedBy: customer.id });
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'FIND_TABLE', 'ORDERING'),
             tableId: freeTable.id,
           });
         } else {
-          // No table — leave rather than wait forever
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'FIND_TABLE', 'LEAVING'),
           });
@@ -44,7 +44,6 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'ORDERING': {
-        // Place order immediately; waiter will pick it up
         if (!customer.orderId && customer.tableId) {
           const order = createOrder(customer.id, customer.tableId, customer.menuItem);
           addOrder(order);
@@ -57,14 +56,15 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'WAITING': {
-        const drainedPatience =
-          customer.patience - (PATIENCE_DRAIN_PER_S * delta) / 1000;
-        const newPatience = Math.max(0, drainedPatience);
+        const newPatience = Math.max(0, customer.patience - (PATIENCE_DRAIN_PER_S * delta) / 1000);
         const newWaitTimer = customer.waitTimer + delta;
 
-        // Check if food has arrived (order state SERVED)
         const order = orders.find((o) => o.id === customer.orderId);
         if (order?.state === 'SERVED') {
+          // Food received — mark order completed and start eating
+          updateOrder(order.id, {
+            state: stepEntity(ORDER_FSM_CONFIG, 'SERVED', 'COMPLETED'),
+          });
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'WAITING', 'EATING'),
             patience: newPatience,
@@ -78,16 +78,12 @@ export function runCustomerSystem(delta: number): void {
           });
           setRating(rating - RATING_HIT_ANGRY);
         } else {
-          updateCustomer(customer.id, {
-            patience: newPatience,
-            waitTimer: newWaitTimer,
-          });
+          updateCustomer(customer.id, { patience: newPatience, waitTimer: newWaitTimer });
         }
         break;
       }
 
       case 'ANGRY': {
-        // Angry customers leave immediately
         updateCustomer(customer.id, {
           state: stepEntity(CUSTOMER_FSM_CONFIG, 'ANGRY', 'LEAVING'),
         });

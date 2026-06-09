@@ -6,16 +6,19 @@ import { COOK_TIME_MS } from '../utils/constants';
 export function runChefSystem(delta: number): void {
   const { chefs, orders, updateChef, updateOrder } = useSimulationStore.getState();
 
+  // Track order IDs claimed this tick so two chefs don't cook the same dish
+  const claimedThisTick = new Set<string>(
+    chefs.filter((c) => c.currentOrderId).map((c) => c.currentOrderId as string),
+  );
+
   for (const chef of chefs) {
     switch (chef.state) {
       case 'IDLE': {
-        // Grab the first order in COOKING state that no chef has claimed yet
         const unclaimed = orders.find(
-          (o) =>
-            o.state === 'COOKING' &&
-            !chefs.some((c) => c.currentOrderId === o.id),
+          (o) => o.state === 'COOKING' && !claimedThisTick.has(o.id),
         );
         if (unclaimed) {
+          claimedThisTick.add(unclaimed.id);
           updateChef(chef.id, {
             state: stepEntity(CHEF_FSM_CONFIG, 'IDLE', 'COOKING'),
             currentOrderId: unclaimed.id,
@@ -28,11 +31,13 @@ export function runChefSystem(delta: number): void {
       case 'COOKING': {
         const newTimer = chef.cookTimer + delta;
         if (newTimer >= COOK_TIME_MS) {
-          // Food done — mark order READY
           if (chef.currentOrderId) {
-            updateOrder(chef.currentOrderId, {
-              state: stepEntity(ORDER_FSM_CONFIG, 'COOKING', 'READY'),
-            });
+            const order = orders.find((o) => o.id === chef.currentOrderId);
+            if (order?.state === 'COOKING') {
+              updateOrder(chef.currentOrderId, {
+                state: stepEntity(ORDER_FSM_CONFIG, 'COOKING', 'READY'),
+              });
+            }
           }
           updateChef(chef.id, {
             state: stepEntity(CHEF_FSM_CONFIG, 'COOKING', 'FOOD_READY'),
@@ -45,7 +50,6 @@ export function runChefSystem(delta: number): void {
       }
 
       case 'FOOD_READY': {
-        // Clear and go idle so next order can be picked up
         updateChef(chef.id, {
           state: stepEntity(CHEF_FSM_CONFIG, 'FOOD_READY', 'IDLE'),
           currentOrderId: null,
