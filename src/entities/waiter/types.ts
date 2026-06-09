@@ -10,4 +10,5 @@ export interface Waiter {
   state: WaiterState;
   assignedOrderId: string | null;
   assignedCustomerId: string | null;
+  taskTimer: number; // ms elapsed in current task
 }

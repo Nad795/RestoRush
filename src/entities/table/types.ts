@@ -6,4 +6,5 @@ export interface Table {
   occupiedBy: string | null; // customer id
   x: number; // grid position for rendering
   y: number;
+  cleanTimer: number; // ms elapsed while CLEANING
 }

@@ -11,5 +11,6 @@ export function createTable(slotIndex: number): Table {
     occupiedBy: null,
     x: 80 + col * 160,  // px on the restaurant floor canvas
     y: 80 + row * 140,
+    cleanTimer: 0,
   };
 }

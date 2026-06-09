@@ -7,5 +7,6 @@ export function createWaiter(): Waiter {
     state: 'IDLE',
     assignedOrderId: null,
     assignedCustomerId: null,
+    taskTimer: 0,
   };
 }
