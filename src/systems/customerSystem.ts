@@ -14,7 +14,7 @@ import {
 export function runCustomerSystem(delta: number): void {
   const { customers, tables, orders, updateCustomer, removeCustomer, addOrder, updateTable, updateOrder } =
     useSimulationStore.getState();
-  const { addMoney, setRating, rating } = useRestaurantStore.getState();
+  const { addMoney, setRating, rating, recordServed, recordAngry } = useRestaurantStore.getState();
 
   for (const customer of customers) {
     switch (customer.state) {
@@ -77,6 +77,7 @@ export function runCustomerSystem(delta: number): void {
             waitTimer: newWaitTimer,
           });
           setRating(rating - RATING_HIT_ANGRY);
+          recordAngry();
         } else {
           updateCustomer(customer.id, { patience: newPatience, waitTimer: newWaitTimer });
         }
@@ -105,6 +106,7 @@ export function runCustomerSystem(delta: number): void {
 
       case 'PAYING': {
         addMoney(customer.spendingAmount);
+        recordServed(customer.spendingAmount);
         setRating(Math.min(5, rating + RATING_RECOVER_HAPPY));
         updateCustomer(customer.id, {
           state: stepEntity(CUSTOMER_FSM_CONFIG, 'PAYING', 'LEAVING'),

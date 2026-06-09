@@ -1,3 +1,4 @@
+import { useRestaurantStore } from '../store/useRestaurantStore';
 import { runSpawnSystem } from './spawnSystem';
 import { runCustomerSystem } from './customerSystem';
 import { runWaiterSystem } from './waiterSystem';
@@ -38,6 +39,7 @@ export function tickSimulation(
   runTableSystem(delta);
   runOrderSystem();
   runRatingSystem(delta);
+  useRestaurantStore.getState().tickDay(delta);
 
   return {
     spawnAccumulator: nextAccumulator,

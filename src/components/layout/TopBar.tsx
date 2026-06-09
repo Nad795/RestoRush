@@ -1,9 +1,9 @@
 import { useRestaurantStore } from '../../store/useRestaurantStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { StatBadge } from '../hud/StatBadge';
+import { DAY_DURATION_MS } from '../../utils/constants';
 
 export function TopBar() {
-  const { money, rating } = useRestaurantStore();
+  const { money, rating, day, dayTimer, speed } = useRestaurantStore();
   const customers = useSimulationStore((s) => s.customers);
   const active = customers.filter((c) => c.state !== 'LEAVING').length;
 
@@ -11,14 +11,54 @@ export function TopBar() {
     rating >= 4 ? 'text-green-400' : rating >= 2.5 ? 'text-yellow-400' : 'text-red-400';
 
   const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+  const dayProgress = Math.min(100, (dayTimer / DAY_DURATION_MS) * 100);
 
   return (
-    <div className="flex items-center justify-between bg-gray-900 border-b border-gray-700 px-4 h-14">
-      <h1 className="text-yellow-400 font-bold text-lg tracking-wide">🍽 RestoRush</h1>
-      <div className="flex divide-x divide-gray-700">
-        <StatBadge label="Money" value={`$${money}`} color="text-green-400" />
-        <StatBadge label="Rating" value={stars} color={ratingColor} />
-        <StatBadge label="Customers" value={active} />
+    <div className="bg-gray-900 border-b border-gray-700">
+      <div className="flex items-center justify-between px-4 h-12">
+        <h1 className="text-yellow-400 font-bold text-base tracking-wide">🍽 RestoRush</h1>
+
+        <div className="flex items-center divide-x divide-gray-700 text-sm">
+          {/* Money */}
+          <div className="flex flex-col items-center px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Money</span>
+            <span className="font-bold text-green-400">${money}</span>
+          </div>
+
+          {/* Rating */}
+          <div className="flex flex-col items-center px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Rating</span>
+            <span className={`font-bold text-sm ${ratingColor}`}>
+              {stars} <span className="text-xs opacity-60">{rating.toFixed(1)}</span>
+            </span>
+          </div>
+
+          {/* Customers */}
+          <div className="flex flex-col items-center px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Customers</span>
+            <span className="font-bold text-white">{active}</span>
+          </div>
+
+          {/* Day */}
+          <div className="flex flex-col items-center px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Day</span>
+            <span className="font-bold text-white">{day}</span>
+          </div>
+
+          {/* Speed indicator */}
+          <div className="flex flex-col items-center px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Speed</span>
+            <span className="font-bold text-blue-400">{speed}×</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Day progress bar */}
+      <div className="h-1 bg-gray-800">
+        <div
+          className="h-full bg-yellow-500 transition-all duration-100"
+          style={{ width: `${dayProgress}%` }}
+        />
       </div>
     </div>
   );

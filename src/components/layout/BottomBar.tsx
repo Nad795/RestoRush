@@ -3,12 +3,18 @@ import { useRestaurantStore, type SpeedMultiplier } from '../../store/useRestaur
 const SPEEDS: SpeedMultiplier[] = [1, 2, 4];
 
 export function BottomBar() {
-  const { paused, speed, day, setPaused, setSpeed } = useRestaurantStore();
+  const { paused, speed, revenueToday, customersServedToday, setPaused, setSpeed } =
+    useRestaurantStore();
 
   return (
-    <div className="flex items-center justify-between bg-gray-900 border-t border-gray-700 px-4 h-12">
-      <span className="text-sm text-gray-400">Day <span className="text-white font-bold">{day}</span></span>
+    <div className="flex items-center justify-between bg-gray-900 border-t border-gray-700 px-4 h-11">
+      {/* Today's quick stats */}
+      <div className="flex items-center gap-4 text-xs text-gray-400">
+        <span>Today: <span className="text-green-400 font-semibold">${revenueToday}</span></span>
+        <span>Served: <span className="text-blue-400 font-semibold">{customersServedToday}</span></span>
+      </div>
 
+      {/* Controls */}
       <div className="flex items-center gap-2">
         <button
           onClick={() => setPaused(!paused)}
@@ -38,7 +44,7 @@ export function BottomBar() {
         </div>
       </div>
 
-      <span className="text-xs text-gray-500">
+      <span className="text-xs text-gray-500 w-20 text-right">
         {paused ? '⏸ Paused' : '▶ Running'}
       </span>
     </div>

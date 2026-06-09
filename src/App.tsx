@@ -5,6 +5,7 @@ import { RightPanel } from './components/layout/RightPanel';
 import { ManagementPanel } from './components/layout/ManagementPanel';
 import { RestaurantFloor } from './components/restaurant/RestaurantFloor';
 import { GameOverModal } from './components/modals/GameOverModal';
+import { DaySummaryModal } from './components/modals/DaySummaryModal';
 import { useSimulationTick } from './hooks/useSimulationTick';
 import { initRestaurant } from './utils/initRestaurant';
 
@@ -25,6 +26,7 @@ export default function App() {
       <ManagementPanel />
       <BottomBar />
 
+      <DaySummaryModal />
       <GameOverModal />
     </div>
   );
