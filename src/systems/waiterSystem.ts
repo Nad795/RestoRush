@@ -1,12 +1,22 @@
 import { useSimulationStore } from '../store/useSimulationStore';
 import { stepEntity } from '../fsm/stepEntity';
 import { WAITER_FSM_CONFIG, ORDER_FSM_CONFIG } from '../fsm/configs';
+import { buildPath } from '../utils/pathfinding';
 import { ORDER_WAIT_MS, SERVE_WAIT_MS, KITCHEN_Y } from '../utils/constants';
 
-export function runWaiterSystem(delta: number): void {
-  const { waiters, orders, updateWaiter, updateOrder } = useSimulationStore.getState();
+// Waiter approaches from the RIGHT side of the table (aisle between columns)
+const SERVE_OFFSET_X = 48;
+const SERVE_OFFSET_Y = 0;
 
-  // Track order IDs claimed this tick so two waiters don't grab the same one
+function kitchenSlot(waiterId: string): { x: number; y: number } {
+  const num = parseInt(waiterId.replace(/\D/g, ''), 10) || 1;
+  return { x: 80 + ((num - 1) % 6) * 64, y: KITCHEN_Y };
+}
+
+export function runWaiterSystem(delta: number): void {
+  const { waiters, orders, tables, updateWaiter, updateOrder } =
+    useSimulationStore.getState();
+
   const claimedThisTick = new Set<string>(
     waiters.filter((w) => w.assignedOrderId).map((w) => w.assignedOrderId as string),
   );
@@ -18,15 +28,19 @@ export function runWaiterSystem(delta: number): void {
           (o) => o.state === 'CREATED' && !claimedThisTick.has(o.id),
         );
         if (pendingOrder) {
-          claimedThisTick.add(pendingOrder.id); // reserve for this tick
-          const tables = useSimulationStore.getState().tables;
-          const orderTable = tables.find((t) => t.id === pendingOrder.tableId);
+          claimedThisTick.add(pendingOrder.id);
+          // Walk to customer's table to take order
+          const table = tables.find((t) => t.id === pendingOrder.tableId);
+          const dest = table
+            ? { x: table.x + SERVE_OFFSET_X, y: table.y + SERVE_OFFSET_Y }
+            : kitchenSlot(waiter.id);
           updateWaiter(waiter.id, {
             state: stepEntity(WAITER_FSM_CONFIG, 'IDLE', 'TAKE_ORDER'),
             assignedOrderId: pendingOrder.id,
             assignedCustomerId: pendingOrder.customerId,
             taskTimer: 0,
-            ...(orderTable ? { posX: orderTable.x, posY: orderTable.y - 25 } : {}),
+            path: buildPath({ x: waiter.posX, y: waiter.posY }, dest),
+            pathIndex: 0,
           });
         }
         break;
@@ -35,8 +49,8 @@ export function runWaiterSystem(delta: number): void {
       case 'TAKE_ORDER': {
         const newTimer = waiter.taskTimer + delta;
         if (newTimer >= ORDER_WAIT_MS) {
+          // Send ticket to kitchen
           if (waiter.assignedOrderId) {
-            // Read current order state — it may have been orphaned
             const order = orders.find((o) => o.id === waiter.assignedOrderId);
             if (order?.state === 'CREATED') {
               updateOrder(waiter.assignedOrderId, {
@@ -44,9 +58,13 @@ export function runWaiterSystem(delta: number): void {
               });
             }
           }
+          // Walk back to kitchen
+          const slot = kitchenSlot(waiter.id);
           updateWaiter(waiter.id, {
             state: stepEntity(WAITER_FSM_CONFIG, 'TAKE_ORDER', 'DELIVER_TO_KITCHEN'),
             taskTimer: 0,
+            path: buildPath({ x: waiter.posX, y: waiter.posY }, slot),
+            pathIndex: 0,
           });
         } else {
           updateWaiter(waiter.id, { taskTimer: newTimer });
@@ -55,11 +73,12 @@ export function runWaiterSystem(delta: number): void {
       }
 
       case 'DELIVER_TO_KITCHEN': {
+        // Instant — waiter dropped off ticket, now waits for food
         updateWaiter(waiter.id, {
           state: stepEntity(WAITER_FSM_CONFIG, 'DELIVER_TO_KITCHEN', 'PICKUP_FOOD'),
           taskTimer: 0,
-          posX: 300,
-          posY: KITCHEN_Y,
+          path: [],
+          pathIndex: 0,
         });
         break;
       }
@@ -68,20 +87,27 @@ export function runWaiterSystem(delta: number): void {
         if (waiter.assignedOrderId) {
           const order = orders.find((o) => o.id === waiter.assignedOrderId);
           if (!order) {
-            // Order was orphaned and removed — free the waiter (Bug 5 secondary guard)
+            // Orphaned order — go back to idle
+            const slot = kitchenSlot(waiter.id);
             updateWaiter(waiter.id, {
               state: 'IDLE',
               assignedOrderId: null,
               assignedCustomerId: null,
               taskTimer: 0,
+              path: buildPath({ x: waiter.posX, y: waiter.posY }, slot),
+              pathIndex: 0,
             });
           } else if (order.state === 'READY') {
-            const tables = useSimulationStore.getState().tables;
-            const orderTable = tables.find((t) => t.id === order.tableId);
+            // Walk to customer's table to serve
+            const table = tables.find((t) => t.id === order.tableId);
+            const dest = table
+              ? { x: table.x + SERVE_OFFSET_X, y: table.y + SERVE_OFFSET_Y }
+              : kitchenSlot(waiter.id);
             updateWaiter(waiter.id, {
               state: stepEntity(WAITER_FSM_CONFIG, 'PICKUP_FOOD', 'SERVE_FOOD'),
               taskTimer: 0,
-              ...(orderTable ? { posX: orderTable.x, posY: orderTable.y - 25 } : {}),
+              path: buildPath({ x: waiter.posX, y: waiter.posY }, dest),
+              pathIndex: 0,
             });
           }
         }
@@ -99,14 +125,15 @@ export function runWaiterSystem(delta: number): void {
               });
             }
           }
-          const kitchenX = 80 + (Number(waiter.id.replace(/\D/g, '')) % 8) * 60;
+          // Walk back to kitchen slot
+          const slot = kitchenSlot(waiter.id);
           updateWaiter(waiter.id, {
             state: stepEntity(WAITER_FSM_CONFIG, 'SERVE_FOOD', 'IDLE'),
             assignedOrderId: null,
             assignedCustomerId: null,
             taskTimer: 0,
-            posX: kitchenX,
-            posY: KITCHEN_Y,
+            path: buildPath({ x: waiter.posX, y: waiter.posY }, slot),
+            pathIndex: 0,
           });
         } else {
           updateWaiter(waiter.id, { taskTimer: newTimer });

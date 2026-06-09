@@ -1,117 +1,126 @@
+import type { Direction } from '../../entities/customer/types';
 
 export type SpriteType = 'customer' | 'waiter' | 'chef' | 'angry_customer';
 
-interface PixelSpriteProps {
+interface Props {
   type: SpriteType;
+  direction?: Direction;
   walking?: boolean;
-  direction?: 'left' | 'right';
-  frame?: number; // 0 or 1 for walk cycle
 }
 
-// Each sprite is 16×24 px visual, scaled up 2×
+const S = 2; // pixel scale multiplier — 1 CSS "pixel" = 2×2 box
 
-const SKIN = '#FDBCB4';
-const HAIR_CUSTOMER = '#8B4513';
-const HAIR_WAITER = '#222';
-const SHIRT_CUSTOMER_M = '#4A90D9';
-const WAITER_SHIRT = '#FFFFFF';
-const PANTS = '#2C3E50';
-const WAITER_PANTS = '#1a1a2e';
-const CHEF_HAT = '#FFFFFF';
-const CHEF_SHIRT = '#FFFFFF';
-const APRON = '#F0E6D3';
+const SKIN     = '#FDBCB4';
+const ANGRY_SKIN = '#FFB090';
+const DARK     = '#222';
+const PANTS    = '#2C3E50';
+const DARK_PANTS = '#1a1a2e';
+const CHEF_WHITE = '#F5F5F5';
+const APRON    = '#E8D5B0';
 
-export function PixelSprite({ type, walking = false, direction = 'right', frame = 0 }: PixelSpriteProps) {
-  const scale = 2;
-  const px = (n: number) => n * scale;
+const COLORS = {
+  customer:       { hair: '#8B4513', shirt: '#4A90D9', pants: PANTS },
+  waiter:         { hair: DARK,      shirt: '#FFFFFF', pants: DARK_PANTS },
+  chef:           { hair: DARK,      shirt: CHEF_WHITE, pants: PANTS },
+  angry_customer: { hair: '#8B4513', shirt: '#D94A4A', pants: PANTS },
+};
 
-  const shirtColor = type === 'waiter' ? WAITER_SHIRT :
-                     type === 'chef' ? CHEF_SHIRT :
-                     type === 'angry_customer' ? '#E74040' : SHIRT_CUSTOMER_M;
+export function PixelSprite({ type, direction = 'right', walking = false }: Props) {
+  const c = COLORS[type];
+  const flipH = direction === 'left';
+  const skin = type === 'angry_customer' ? ANGRY_SKIN : SKIN;
 
-  const hairColor = type === 'waiter' || type === 'chef' ? HAIR_WAITER : HAIR_CUSTOMER;
-
-  const legOffset1 = walking ? (frame === 0 ? -2 : 2) : 0;
-  const legOffset2 = walking ? (frame === 0 ? 2 : -2) : 0;
+  const legA = walking ? 'walk-leg-a' : '';
+  const legB = walking ? 'walk-leg-b' : '';
 
   return (
     <div style={{
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      width: px(12),
+      width: S * 12,
       imageRendering: 'pixelated',
-      transform: direction === 'left' ? 'scaleX(-1)' : 'scaleX(1)',
-      filter: type === 'angry_customer' ? 'hue-rotate(0deg)' : 'none',
+      transform: flipH ? 'scaleX(-1)' : undefined,
+      userSelect: 'none',
+      pointerEvents: 'none',
     }}>
-      {/* Hat / Hair top */}
+
+      {/* Chef hat */}
       {type === 'chef' && (
-        <div style={{ width: px(10), height: px(4), background: CHEF_HAT, border: `${scale}px solid #ddd` }} />
+        <div style={{
+          width: S * 10, height: S * 5,
+          background: CHEF_WHITE,
+          borderBottom: `${S}px solid #ddd`,
+        }} />
       )}
+
+      {/* Hair */}
+      <div style={{
+        width: S * 8, height: S * 2,
+        background: c.hair,
+      }} />
+
       {/* Head */}
       <div style={{
-        width: px(8), height: px(8),
-        background: type === 'angry_customer' ? '#FFB090' : SKIN,
+        width: S * 8, height: S * 7,
+        background: skin,
         position: 'relative',
-        boxShadow: `0 ${-px(2)}px 0 ${hairColor}`,
       }}>
         {/* Eyes */}
         <div style={{
-          position: 'absolute', top: px(3), left: px(2),
-          width: px(1.5), height: px(1.5), background: '#222',
+          position: 'absolute', top: S * 2,
+          left: S * 1.5, width: S * 1.5, height: S * 1.5,
+          background: DARK,
         }} />
         <div style={{
-          position: 'absolute', top: px(3), right: px(2),
-          width: px(1.5), height: px(1.5), background: '#222',
+          position: 'absolute', top: S * 2,
+          right: S * 1.5, width: S * 1.5, height: S * 1.5,
+          background: DARK,
         }} />
-        {/* Mouth — angry */}
+        {/* Angry brow */}
         {type === 'angry_customer' && (
-          <div style={{
-            position: 'absolute', bottom: px(1.5), left: px(2),
-            width: px(4), height: px(1), background: '#c0392b',
-            borderRadius: 0,
-          }} />
+          <>
+            <div style={{ position:'absolute', top: S*0.5, left: S*1, width: S*2, height: S, background:'#8B2500', transform:'rotate(-15deg)' }} />
+            <div style={{ position:'absolute', top: S*0.5, right: S*1, width: S*2, height: S, background:'#8B2500', transform:'rotate(15deg)' }} />
+          </>
         )}
       </div>
 
       {/* Body */}
       <div style={{
-        width: px(10), height: px(8),
-        background: shirtColor,
-        borderLeft: `${scale}px solid rgba(0,0,0,0.15)`,
-        borderRight: `${scale}px solid rgba(0,0,0,0.15)`,
+        width: S * 10, height: S * 8,
+        background: c.shirt,
         position: 'relative',
       }}>
-        {/* Waiter bow tie */}
+        {/* Waiter bow-tie */}
         {type === 'waiter' && (
           <div style={{
-            position: 'absolute', top: px(1), left: px(3),
-            width: px(4), height: px(2), background: '#E74C3C',
+            position: 'absolute', top: S, left: S * 3,
+            width: S * 4, height: S * 2,
+            background: '#E74C3C',
+            clipPath: 'polygon(0 0, 40% 50%, 0 100%, 60% 100%, 100% 50%, 60% 0)',
           }} />
         )}
-        {/* Chef apron */}
+        {/* Chef apron center strip */}
         {type === 'chef' && (
           <div style={{
-            position: 'absolute', top: px(1), left: px(2),
-            width: px(6), height: px(6), background: APRON,
+            position: 'absolute', top: S, left: S * 3,
+            width: S * 4, height: S * 6,
+            background: APRON,
           }} />
         )}
       </div>
 
       {/* Legs */}
-      <div style={{ display: 'flex', gap: px(1) }}>
-        <div style={{
-          width: px(4), height: px(6),
-          background: type === 'waiter' ? WAITER_PANTS : PANTS,
-          transform: `translateY(${legOffset1}px)`,
-          transition: 'transform 0.1s',
-        }} />
-        <div style={{
-          width: px(4), height: px(6),
-          background: type === 'waiter' ? WAITER_PANTS : PANTS,
-          transform: `translateY(${legOffset2}px)`,
-          transition: 'transform 0.1s',
-        }} />
+      <div style={{ display: 'flex', gap: S }}>
+        <div className={legA} style={{ width: S * 4, height: S * 6, background: c.pants }} />
+        <div className={legB} style={{ width: S * 4, height: S * 6, background: c.pants }} />
+      </div>
+
+      {/* Feet */}
+      <div style={{ display: 'flex', gap: S * 2 }}>
+        <div style={{ width: S * 4, height: S * 2, background: '#1a1a1a' }} />
+        <div style={{ width: S * 4, height: S * 2, background: '#1a1a1a' }} />
       </div>
     </div>
   );

@@ -18,5 +18,8 @@ export function createCustomer(): Customer {
     menuItem: MENU_ITEMS[Math.floor(Math.random() * MENU_ITEMS.length)],
     posX: 685,
     posY: 210,
+    path: [],
+    pathIndex: 0,
+    direction: 'left',
   };
 }

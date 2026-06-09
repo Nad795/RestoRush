@@ -10,5 +10,8 @@ export function createWaiter(): Waiter {
     taskTimer: 0,
     posX: 120,
     posY: 456,
+    path: [],
+    pathIndex: 0,
+    direction: 'right',
   };
 }

@@ -8,17 +8,22 @@ export type CustomerState =
   | 'LEAVING'
   | 'ANGRY';
 
+export type Direction = 'left' | 'right' | 'up' | 'down';
+
 export interface Customer {
   id: string;
   state: CustomerState;
   tableId: string | null;
   orderId: string | null;
-  patience: number;       // 0–100
-  happiness: number;      // 0–100
-  spendingAmount: number; // $ they will pay
-  waitTimer: number;      // ms spent waiting
-  eatTimer: number;       // ms spent eating
-  menuItem: string;       // dish they ordered
+  patience: number;
+  happiness: number;
+  spendingAmount: number;
+  waitTimer: number;
+  eatTimer: number;
+  menuItem: string;
   posX: number;
   posY: number;
+  path: Array<{ x: number; y: number }>;
+  pathIndex: number;
+  direction: Direction;
 }

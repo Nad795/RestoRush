@@ -1,24 +1,49 @@
 import { useEffect, useRef } from 'react';
 import { useRestaurantStore } from '../store/useRestaurantStore';
-import { tickSimulation, createLoopState, type SimulationLoopState } from '../systems/simulationLoop';
+import {
+  tickSimulation,
+  createLoopState,
+  type SimulationLoopState,
+} from '../systems/simulationLoop';
+import { runMovementSystem } from '../systems/movementSystem';
 
-const TICK_INTERVAL_MS = 100; // 10 ticks/second — plenty for a sim game
+const SIM_STEP_MS = 100; // simulation logic runs at 10 Hz
 
 export function useSimulationTick(): void {
   const loopStateRef = useRef<SimulationLoopState>(createLoopState());
+  const simAccRef    = useRef(0);
 
   useEffect(() => {
-    const id = setInterval(() => {
+    let rafId: number;
+    let lastTime = performance.now();
+
+    const loop = (now: number) => {
+      // Cap delta to 100ms so tab-blur doesn't cause a time explosion
+      const rawDelta = Math.min(now - lastTime, 100);
+      lastTime = now;
+
       const { paused, speed } = useRestaurantStore.getState();
-      if (paused) return;
 
-      loopStateRef.current = tickSimulation(
-        loopStateRef.current,
-        TICK_INTERVAL_MS,
-        speed,
-      );
-    }, TICK_INTERVAL_MS);
+      if (!paused) {
+        // Accumulate real time and drain in fixed simulation steps
+        simAccRef.current += rawDelta;
+        while (simAccRef.current >= SIM_STEP_MS) {
+          loopStateRef.current = tickSimulation(
+            loopStateRef.current,
+            SIM_STEP_MS,
+            speed,
+          );
+          simAccRef.current -= SIM_STEP_MS;
+        }
 
-    return () => clearInterval(id);
+        // Movement runs every frame for smooth visuals
+        runMovementSystem(rawDelta, speed);
+      }
+
+      rafId = requestAnimationFrame(loop);
+    };
+
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   }, []);
 }

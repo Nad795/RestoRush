@@ -10,3 +10,15 @@ body {
   color: #e0e0e0;
   font-family: system-ui, sans-serif;
 }
+
+/* Pixel character walking leg animations */
+@keyframes walk-leg-a {
+  0%,100% { transform: translateY(-3px); }
+  50%      { transform: translateY(3px);  }
+}
+@keyframes walk-leg-b {
+  0%,100% { transform: translateY(3px);  }
+  50%      { transform: translateY(-3px); }
+}
+.walk-leg-a { animation: walk-leg-a 0.28s infinite linear; }
+.walk-leg-b { animation: walk-leg-b 0.28s infinite linear; }

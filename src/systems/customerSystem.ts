@@ -3,6 +3,7 @@ import { useRestaurantStore } from '../store/useRestaurantStore';
 import { stepEntity } from '../fsm/stepEntity';
 import { CUSTOMER_FSM_CONFIG, ORDER_FSM_CONFIG } from '../fsm/configs';
 import { createOrder } from '../entities/order/factory';
+import { buildPath } from '../utils/pathfinding';
 import {
   PATIENCE_DRAIN_PER_S,
   PATIENCE_ANGER_THRESHOLD,
@@ -13,10 +14,17 @@ import {
   ENTRANCE_Y,
 } from '../utils/constants';
 
+// Customer approaches from the LEFT side of their table (leaves aisle clear on right for waiter)
+const SEAT_OFFSET_X = -42;
+const SEAT_OFFSET_Y =  0;
+
 export function runCustomerSystem(delta: number): void {
-  const { customers, tables, orders, updateCustomer, removeCustomer, addOrder, updateTable, updateOrder } =
-    useSimulationStore.getState();
-  const { addMoney, setRating, rating, recordServed, recordAngry } = useRestaurantStore.getState();
+  const {
+    customers, tables, orders,
+    updateCustomer, removeCustomer, addOrder, updateTable, updateOrder,
+  } = useSimulationStore.getState();
+  const { addMoney, setRating, rating, recordServed, recordAngry } =
+    useRestaurantStore.getState();
 
   for (const customer of customers) {
     switch (customer.state) {
@@ -28,22 +36,23 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'FIND_TABLE': {
-        // Re-read tables from store so we see claims made earlier this same tick
         const freshTables = useSimulationStore.getState().tables;
         const freeTable = freshTables.find((t) => t.state === 'AVAILABLE');
         if (freeTable) {
+          const dest = {
+            x: freeTable.x + SEAT_OFFSET_X,
+            y: freeTable.y + SEAT_OFFSET_Y,
+          };
           updateTable(freeTable.id, { state: 'OCCUPIED', occupiedBy: customer.id });
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'FIND_TABLE', 'ORDERING'),
             tableId: freeTable.id,
-            posX: freeTable.x,
-            posY: freeTable.y - 25,
+            path: buildPath({ x: customer.posX, y: customer.posY }, dest),
+            pathIndex: 0,
           });
         } else {
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'FIND_TABLE', 'LEAVING'),
-            posX: ENTRANCE_X,
-            posY: ENTRANCE_Y,
           });
         }
         break;
@@ -62,12 +71,14 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'WAITING': {
-        const newPatience = Math.max(0, customer.patience - (PATIENCE_DRAIN_PER_S * delta) / 1000);
+        const newPatience = Math.max(
+          0,
+          customer.patience - (PATIENCE_DRAIN_PER_S * delta) / 1000,
+        );
         const newWaitTimer = customer.waitTimer + delta;
-
         const order = orders.find((o) => o.id === customer.orderId);
+
         if (order?.state === 'SERVED') {
-          // Food received — mark order completed and start eating
           updateOrder(order.id, {
             state: stepEntity(ORDER_FSM_CONFIG, 'SERVED', 'COMPLETED'),
           });
@@ -121,15 +132,24 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'LEAVING': {
-        // Free the table
         if (customer.tableId) {
+          // First entry into LEAVING: free table and start walking to exit
           const table = tables.find((t) => t.id === customer.tableId);
           if (table?.state === 'OCCUPIED') {
             updateTable(customer.tableId, { state: 'DIRTY', occupiedBy: null });
           }
+          updateCustomer(customer.id, {
+            tableId: null,
+            path: buildPath(
+              { x: customer.posX, y: customer.posY },
+              { x: ENTRANCE_X, y: ENTRANCE_Y },
+            ),
+            pathIndex: 0,
+          });
+        } else if (customer.pathIndex >= customer.path.length) {
+          // Reached the exit — remove from simulation
+          removeCustomer(customer.id);
         }
-        updateCustomer(customer.id, { posX: ENTRANCE_X, posY: ENTRANCE_Y });
-        removeCustomer(customer.id);
         break;
       }
     }
