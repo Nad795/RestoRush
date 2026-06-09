@@ -34,15 +34,7 @@ export function RestaurantFloor() {
           backgroundSize:'32px 32px',
         }} />
 
-        {/* Wainscoting / wall base strip */}
-        <div style={{
-          position:'absolute', top:0, left:0, right:0, height:14,
-          background:'#2D3B2A',
-          borderBottom:'3px solid #3D4F38',
-          zIndex:2,
-        }} />
-
-        {/* Static interior decorations */}
+        {/* Static interior decorations (includes wall strip) */}
         <FloorDecor />
 
         {/* Tables */}
@@ -84,20 +76,32 @@ export function RestaurantFloor() {
         }}>
           <KitchenView chefs={chefs} floorW={FLOOR_W} />
 
-          {/* Chefs rendered on top of kitchen view */}
-          <div style={{ position:'absolute', left:16, bottom:4, display:'flex', gap:8, zIndex:12 }}>
-            {chefs.map((c) => <ChefView key={c.id} chef={c} />)}
-          </div>
+          {/* Chefs positioned to align with their stoves (stove x = 16 + i*72) */}
+          {chefs.map((c, i) => (
+            <div key={c.id} style={{ position:'absolute', left: 16 + i * 72, bottom: 4, zIndex: 12 }}>
+              <ChefView chef={c} />
+            </div>
+          ))}
         </div>
 
-        {/* Entrance door (right wall) */}
+        {/* Entrance door (right wall) — 18px wide, centred on ENTRANCE_Y=210 */}
         <div style={{
-          position:'absolute', right:0, top:180, width:6, height:60,
-          background:'#8B5E3C', zIndex:4,
+          position:'absolute', right:0, top:178, width:18, height:64,
+          background:'#8B5E3C',
+          borderLeft:'3px solid #6B4226',
+          borderTop:'3px solid #A0724C',
+          borderBottom:'3px solid #5A3820',
+          zIndex:4,
         }} />
+        {/* Door glass */}
         <div style={{
-          position:'absolute', right:0, top:183, width:4, height:54,
-          background:'rgba(180,220,255,0.3)', zIndex:5,
+          position:'absolute', right:2, top:184, width:10, height:50,
+          background:'rgba(180,220,255,0.25)', zIndex:5,
+        }} />
+        {/* Door knob */}
+        <div style={{
+          position:'absolute', right:13, top:207, width:4, height:4,
+          background:'#D4A835', zIndex:6,
         }} />
       </div>
     </div>

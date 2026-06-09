@@ -118,13 +118,13 @@ export function FloorDecor() {
     <>
       <WallStrip />
 
-      {/* Corner plants */}
-      <PixelPlant x={4}   y={16} />
-      <PixelPlant x={696} y={16} />
-
       {/* Windows on left wall */}
       <PixelWindow x={8}  y={20} />
       <PixelWindow x={8}  y={70} />
+
+      {/* Plants: left one sits below the two windows; right one in top-right corner */}
+      <PixelPlant x={4}   y={120} />
+      <PixelPlant x={696} y={16} />
 
       {/* Chalkboard menu near entrance */}
       <PixelChalkboard x={614} y={20} />

@@ -249,32 +249,24 @@
          ║  Managed by: src/systems/orderSystem.ts (+ other systems)║
          ║  Entity:     src/entities/order/types.ts                 ║
          ╚═══════════════════════════════════════════════════════════╝ -->
-    <state id="OrderFSM" initial="PENDING">
+    <state id="OrderFSM" initial="CREATED">
 
-      <state id="PENDING">
+      <state id="CREATED">
         <!-- Order created by customer; waiter not yet assigned -->
-        <transition target="RECEIVED" cond="waiterPickedUp">
-          <!-- Waiter arrived at table after ORDER_WAIT_MS: order acknowledged -->
+        <!-- Initial state set by createOrder() factory -->
+        <transition target="COOKING" cond="waiterDeliveredToKitchen">
+          <!-- Waiter arrived at table (ORDER_WAIT_MS), walked to kitchen,
+               and handed off ticket: chef begins cooking -->
         </transition>
         <transition target="COMPLETED" cond="customerGone">
-          <!-- Orphan cleanup (orderSystem): customer left before waiter arrived -->
-        </transition>
-      </state>
-
-      <state id="RECEIVED">
-        <!-- Waiter carrying order ticket to kitchen -->
-        <transition target="COOKING" cond="waiterReachedKitchen">
-          <!-- Waiter handed order to chef: chef starts cooking -->
-        </transition>
-        <transition target="COMPLETED" cond="customerGone">
-          <!-- Orphan cleanup -->
+          <!-- Orphan cleanup (orderSystem): customer left before order was cooked -->
         </transition>
       </state>
 
       <state id="COOKING">
-        <!-- Chef's cookTimer counts up to COOK_TIME_MS -->
+        <!-- Chef's cookTimer counts up; stove animation active -->
         <transition target="READY" cond="cookTimer &gt;= COOK_TIME_MS">
-          <!-- Chef sets order READY; dish on pass-through counter -->
+          <!-- Chef sets order READY; green pot lid appears; dish on pass-through -->
         </transition>
         <transition target="COMPLETED" cond="customerGone">
           <!-- Orphan cleanup: free assigned chef and waiter -->
@@ -282,30 +274,21 @@
       </state>
 
       <state id="READY">
-        <!-- Dish sitting on counter waiting for waiter pickup -->
-        <transition target="PICKUP" cond="waiterPickedUpFood">
-          <!-- Waiter grabbed dish: heading to customer table -->
+        <!-- Dish on pass-through counter; waiter polling for pickup -->
+        <transition target="SERVED" cond="waiterServedToCustomer">
+          <!-- Waiter picked up food, walked to table, served after SERVE_WAIT_MS -->
         </transition>
         <transition target="COMPLETED" cond="customerGone">
           <!-- Orphan cleanup -->
         </transition>
       </state>
 
-      <state id="PICKUP">
-        <!-- Waiter walking to table with food; taskTimer counts SERVE_WAIT_MS -->
-        <transition target="SERVED" cond="waiterServed">
-          <!-- Waiter served food to customer -->
-        </transition>
-        <transition target="COMPLETED" cond="customerGone">
-          <!-- Orphan cleanup: free waiter assignment -->
-        </transition>
-      </state>
-
       <state id="SERVED">
-        <!-- Plate on table; customer transitions to EATING -->
-        <!-- customerSystem calls stepEntity(ORDER,'SERVED','COMPLETED') -->
+        <!-- Plate delivered to customer table -->
+        <!-- customerSystem detects order.state==='SERVED' in WAITING tick -->
         <transition target="COMPLETED">
-          <!-- Immediate: triggered by customerSystem when customer starts eating -->
+          <!-- Immediate: customerSystem calls stepEntity(ORDER,'SERVED','COMPLETED')
+               when customer transitions to EATING -->
         </transition>
       </state>
 

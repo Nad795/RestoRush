@@ -118,7 +118,7 @@ export function PixelSprite({ type, direction = 'right', walking = false }: Prop
       </div>
 
       {/* Feet */}
-      <div style={{ display: 'flex', gap: S * 2 }}>
+      <div style={{ display: 'flex', gap: S }}>
         <div style={{ width: S * 4, height: S * 2, background: '#1a1a1a' }} />
         <div style={{ width: S * 4, height: S * 2, background: '#1a1a1a' }} />
       </div>

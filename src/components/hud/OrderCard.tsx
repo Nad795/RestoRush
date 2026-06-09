@@ -9,7 +9,7 @@ const STATE_COLOR: Record<Order['state'], string> = {
 };
 
 const STATE_LABEL: Record<Order['state'], string> = {
-  CREATED:   'Waiting',
+  CREATED:   'New',
   COOKING:   'Cooking',
   READY:     'Ready!',
   SERVED:    'Served',
