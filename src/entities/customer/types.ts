@@ -18,4 +18,5 @@ export interface Customer {
   spendingAmount: number; // $ they will pay
   waitTimer: number;      // ms spent waiting
   eatTimer: number;       // ms spent eating
+  menuItem: string;       // dish they ordered
 }
