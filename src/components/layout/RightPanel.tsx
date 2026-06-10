@@ -1,10 +1,13 @@
 import { useSimulationStore } from '../../store/useSimulationStore';
+import { useRestaurantStore } from '../../store/useRestaurantStore';
 import { OrderQueue } from '../hud/OrderQueue';
+import { LOYALTY_MAX } from '../../utils/constants';
 
 export function RightPanel() {
   const customers = useSimulationStore((s) => s.customers);
   const waiters   = useSimulationStore((s) => s.waiters);
   const chefs     = useSimulationStore((s) => s.chefs);
+  const { loyalty, adDaysRemaining, adSpawnBonus } = useRestaurantStore();
 
   const waiting = customers.filter((c) => c.state === 'WAITING' || c.state === 'ANGRY');
 
@@ -33,6 +36,30 @@ export function RightPanel() {
               </span>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Marketing</p>
+        <div className="flex flex-col gap-1 text-xs">
+          <div className="bg-gray-800 rounded px-2 py-1">
+            <div className="flex justify-between mb-1">
+              <span className="text-pink-300">💗 Loyalty</span>
+              <span className="text-gray-400">{Math.round(loyalty)}/{LOYALTY_MAX}</span>
+            </div>
+            <div style={{ height: 3, background: '#374151' }}>
+              <div style={{
+                width: `${(loyalty / LOYALTY_MAX) * 100}%`, height: '100%',
+                background: '#ec4899',
+              }} />
+            </div>
+          </div>
+          <div className="flex justify-between bg-gray-800 rounded px-2 py-1">
+            <span className="text-purple-300">📢 Ad Campaign</span>
+            <span className="text-gray-400">
+              {adDaysRemaining > 0 ? `${adDaysRemaining}d left (x${adSpawnBonus.toFixed(1)})` : 'inactive'}
+            </span>
+          </div>
         </div>
       </div>
 

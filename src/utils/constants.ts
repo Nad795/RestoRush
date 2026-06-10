@@ -1,6 +1,7 @@
 // All timing values are in real milliseconds (simulation speed scales them)
 
-export const SPAWN_INTERVAL_MS   = 6000;   // new customer every 6s (slightly slower than Stage 4)
+export const SPAWN_INTERVAL_MS   = 9000;   // base: new customer every 9s — deliberately slow
+                                            // without advertising (see AD_TIERS in utils/advertising.ts)
 export const PATIENCE_DRAIN_PER_S = 1.5;   // 1.5pts/s — gives ~53s before anger at patience=100
 export const HAPPINESS_DRAIN_PER_S = 3;
 
@@ -37,6 +38,26 @@ export const RATING_RECOVER_HAPPY  = 0.04;  // slower recovery than penalty
 
 // Day length in real ms (speed-scaled)
 export const DAY_DURATION_MS = 90_000;     // 90s real-time = 1 game day at 1×
+
+// Win/lose conditions
+export const GAME_LENGTH_DAYS = 21;        // game ends after this many days
+export const GOAL_MONEY = 5000;            // win if money >= this by end of day 21
+export const RATING_LOSS_THRESHOLD = 1.0;  // instant loss if rating drops to/below this
+
+// Daily staff wages — deducted from money on each day rollover. Meaningfully
+// smaller than WAITER_COST/CHEF_COST per-day, but a real running cost: the
+// starting 1 waiter + 1 chef cost $45/day, ~$945 over 21 days.
+export const WAITER_DAILY_WAGE = 10;
+export const CHEF_DAILY_WAGE   = 15;
+
+// Loyalty
+export const LOYALTY_GAIN_PER_HAPPY       = 2;   // +loyalty per happy "served before anger"
+export const LOYALTY_LOSS_PER_ANGRY_LOYAL = 5;   // -loyalty when a loyalty customer goes ANGRY
+export const LOYALTY_MAX = 100;                  // cap; also denominator for trickle-spawn chance
+
+// Spawn rate scaling (rating affects base spawn rate; ads add a multiplier)
+export const RATING_SPAWN_MULT_MIN = 0.5;  // at rating = 1
+export const RATING_SPAWN_MULT_MAX = 1.5;  // at rating = 5
 
 // Floor layout coordinates (pixels)
 export const FLOOR_W = 720;

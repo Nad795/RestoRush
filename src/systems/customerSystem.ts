@@ -10,6 +10,8 @@ import {
   EAT_TIME_MS,
   RATING_HIT_ANGRY,
   RATING_RECOVER_HAPPY,
+  LOYALTY_GAIN_PER_HAPPY,
+  LOYALTY_LOSS_PER_ANGRY_LOYAL,
   ENTRANCE_X,
   ENTRANCE_Y,
 } from '../utils/constants';
@@ -23,7 +25,7 @@ export function runCustomerSystem(delta: number): void {
     customers, tables, orders,
     updateCustomer, removeCustomer, addOrder, updateTable, updateOrder,
   } = useSimulationStore.getState();
-  const { addMoney, setRating, rating, recordServed, recordAngry } =
+  const { addMoney, setRating, rating, recordServed, recordAngry, adjustLoyalty } =
     useRestaurantStore.getState();
 
   for (const customer of customers) {
@@ -86,7 +88,9 @@ export function runCustomerSystem(delta: number): void {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'WAITING', 'EATING'),
             patience: newPatience,
             waitTimer: newWaitTimer,
+            spendingAmount: order.price,
           });
+          adjustLoyalty(LOYALTY_GAIN_PER_HAPPY);
         } else if (newPatience <= PATIENCE_ANGER_THRESHOLD) {
           updateCustomer(customer.id, {
             state: stepEntity(CUSTOMER_FSM_CONFIG, 'WAITING', 'ANGRY'),
@@ -95,6 +99,9 @@ export function runCustomerSystem(delta: number): void {
           });
           setRating(rating - RATING_HIT_ANGRY);
           recordAngry();
+          if (customer.source === 'loyalty') {
+            adjustLoyalty(-LOYALTY_LOSS_PER_ANGRY_LOYAL);
+          }
         } else {
           updateCustomer(customer.id, { patience: newPatience, waitTimer: newWaitTimer });
         }

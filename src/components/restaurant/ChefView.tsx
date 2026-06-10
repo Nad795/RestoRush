@@ -1,13 +1,18 @@
 import type { Chef } from '../../entities/chef/types';
 import { PixelSprite } from './PixelSprite';
+import { useSimulationStore } from '../../store/useSimulationStore';
 import { COOK_TIME_MS } from '../../utils/constants';
 
 interface Props { chef: Chef; index?: number }
 
 export function ChefView({ chef }: Props) {
-  const cooking  = chef.state === 'COOKING';
-  const progress = cooking
-    ? Math.min(100, (chef.cookTimer / COOK_TIME_MS) * 100)
+  const order = useSimulationStore((s) =>
+    chef.currentOrderId ? s.orders.find((o) => o.id === chef.currentOrderId) : undefined,
+  );
+  const cooking   = chef.state === 'COOKING';
+  const cookTimeMs = order?.cookTimeMs ?? COOK_TIME_MS;
+  const progress  = cooking
+    ? Math.min(100, (chef.cookTimer / cookTimeMs) * 100)
     : 0;
 
   return (

@@ -7,5 +7,6 @@ export interface Order {
   tableId: string;
   item: string;   // dish name (randomised)
   price: number;
+  cookTimeMs: number;
   createdAt: number; // game-time ms
 }

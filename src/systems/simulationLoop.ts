@@ -1,4 +1,5 @@
 import { useRestaurantStore } from '../store/useRestaurantStore';
+import { useSimulationStore } from '../store/useSimulationStore';
 import { runSpawnSystem } from './spawnSystem';
 import { runCustomerSystem } from './customerSystem';
 import { runWaiterSystem } from './waiterSystem';
@@ -6,6 +7,7 @@ import { runChefSystem } from './chefSystem';
 import { runTableSystem } from './tableSystem';
 import { runOrderSystem } from './orderSystem';
 import { runRatingSystem } from './ratingSystem';
+import { WAITER_DAILY_WAGE, CHEF_DAILY_WAGE } from '../utils/constants';
 
 export interface SimulationLoopState {
   spawnAccumulator: number;
@@ -39,7 +41,10 @@ export function tickSimulation(
   runTableSystem(delta);
   runOrderSystem();
   runRatingSystem(delta);
-  useRestaurantStore.getState().tickDay(delta);
+
+  const { waiters, chefs } = useSimulationStore.getState();
+  const dailyWageTotal = waiters.length * WAITER_DAILY_WAGE + chefs.length * CHEF_DAILY_WAGE;
+  useRestaurantStore.getState().tickDay(delta, dailyWageTotal);
 
   return {
     spawnAccumulator: nextAccumulator,

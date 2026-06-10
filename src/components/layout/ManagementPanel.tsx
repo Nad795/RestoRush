@@ -4,9 +4,10 @@ import { createWaiter } from '../../entities/waiter/factory';
 import { createChef } from '../../entities/chef/factory';
 import { createTable } from '../../entities/table/factory';
 import { WAITER_COST, CHEF_COST, TABLE_COST } from '../../utils/constants';
+import { AD_TIERS } from '../../utils/advertising';
 
 export function ManagementPanel() {
-  const { money, addMoney } = useRestaurantStore();
+  const { money, addMoney, adDaysRemaining, adSpawnBonus, startAdvertisement } = useRestaurantStore();
   const { addWaiter, addChef, addTable, tables } = useSimulationStore();
 
   function hire(cost: number, fn: () => void) {
@@ -43,6 +44,27 @@ export function ManagementPanel() {
         <span>🪑 Table</span>
         <span className="text-green-300">${TABLE_COST}</span>
       </button>
+
+      <div className="flex flex-col items-center px-3 py-1 rounded bg-purple-800 text-white text-xs">
+        <span>📢 Advertise</span>
+        <select
+          value=""
+          onChange={(e) => {
+            if (e.target.value) startAdvertisement(e.target.value);
+            e.target.value = '';
+          }}
+          className="bg-purple-900 text-purple-200 text-xs rounded px-1 mt-0.5 outline-none cursor-pointer"
+        >
+          <option value="" disabled>
+            {adDaysRemaining > 0 ? `Active: ${adDaysRemaining}d (x${adSpawnBonus.toFixed(1)})` : 'Choose campaign'}
+          </option>
+          {AD_TIERS.map((tier) => (
+            <option key={tier.id} value={tier.id} disabled={money < tier.cost}>
+              {tier.label} — ${tier.cost} ({tier.durationDays}d, x{tier.spawnBonus})
+            </option>
+          ))}
+        </select>
+      </div>
 
       <span className="ml-auto text-xs text-gray-500">Tables: {tables.length}/16</span>
     </div>

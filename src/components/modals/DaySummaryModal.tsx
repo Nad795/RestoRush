@@ -1,11 +1,12 @@
 import { useRestaurantStore } from '../../store/useRestaurantStore';
 
 export function DaySummaryModal() {
-  const { daySummary, dismissSummary } = useRestaurantStore();
-  if (!daySummary) return null;
+  const { daySummary, dismissSummary, gameStatus } = useRestaurantStore();
+  if (!daySummary || gameStatus !== 'playing') return null;
 
-  const { day, revenue, customersServed, customersAngry, ratingEnd } = daySummary;
+  const { day, revenue, customersServed, customersAngry, ratingEnd, wages } = daySummary;
   const stars = '★'.repeat(Math.round(ratingEnd)) + '☆'.repeat(5 - Math.round(ratingEnd));
+  const net = revenue - wages;
 
   return (
     <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -32,6 +33,16 @@ export function DaySummaryModal() {
           <div className="bg-gray-800 rounded-lg p-3">
             <div className="text-xs text-gray-400 uppercase tracking-wide">Rating</div>
             <div className="text-lg font-bold text-yellow-400">{stars}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-3">
+            <div className="text-xs text-gray-400 uppercase tracking-wide">Wages</div>
+            <div className="text-xl font-bold text-red-400">-${wages}</div>
+          </div>
+          <div className="bg-gray-800 rounded-lg p-3">
+            <div className="text-xs text-gray-400 uppercase tracking-wide">Net</div>
+            <div className={`text-xl font-bold ${net >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {net >= 0 ? '+' : '-'}${Math.abs(net)}
+            </div>
           </div>
         </div>
 

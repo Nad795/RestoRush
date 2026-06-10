@@ -4,3 +4,5 @@ export * from './timeUtils';
 export * from './constants';
 export * from './initRestaurant';
 export * from './pathfinding';
+export * from './menu';
+export * from './advertising';

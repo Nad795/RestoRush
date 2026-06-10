@@ -30,14 +30,15 @@ export function runChefSystem(delta: number): void {
 
       case 'COOKING': {
         const newTimer = chef.cookTimer + delta;
-        if (newTimer >= COOK_TIME_MS) {
-          if (chef.currentOrderId) {
-            const order = orders.find((o) => o.id === chef.currentOrderId);
-            if (order?.state === 'COOKING') {
-              updateOrder(chef.currentOrderId, {
-                state: stepEntity(ORDER_FSM_CONFIG, 'COOKING', 'READY'),
-              });
-            }
+        const order = chef.currentOrderId
+          ? orders.find((o) => o.id === chef.currentOrderId)
+          : undefined;
+        const cookTimeMs = order?.cookTimeMs ?? COOK_TIME_MS;
+        if (newTimer >= cookTimeMs) {
+          if (chef.currentOrderId && order?.state === 'COOKING') {
+            updateOrder(chef.currentOrderId, {
+              state: stepEntity(ORDER_FSM_CONFIG, 'COOKING', 'READY'),
+            });
           }
           updateChef(chef.id, {
             state: stepEntity(CHEF_FSM_CONFIG, 'COOKING', 'FOOD_READY'),

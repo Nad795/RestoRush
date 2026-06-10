@@ -1,24 +1,18 @@
 import { nextId } from '../../utils/idGenerator';
+import { MENU } from '../../utils/menu';
+import { COOK_TIME_MS } from '../../utils/constants';
 import type { Order } from './types';
 
-const PRICES: Record<string, number> = {
-  Burger: 12,
-  Pizza: 15,
-  Pasta: 13,
-  Salad: 9,
-  Steak: 28,
-  Sushi: 22,
-  Tacos: 11,
-};
-
 export function createOrder(customerId: string, tableId: string, menuItem: string): Order {
+  const dish = MENU.find((m) => m.name === menuItem);
   return {
     id: nextId('order'),
     state: 'CREATED',
     customerId,
     tableId,
     item: menuItem,
-    price: PRICES[menuItem] ?? 12,
+    price: dish?.price ?? 16,
+    cookTimeMs: dish?.cookTimeMs ?? COOK_TIME_MS,
     createdAt: Date.now(),
   };
 }

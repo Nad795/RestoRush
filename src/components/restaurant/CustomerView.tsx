@@ -1,5 +1,6 @@
 import type { Customer } from '../../entities/customer/types';
 import { PixelSprite } from './PixelSprite';
+import { MENU } from '../../utils/menu';
 
 interface Props { customer: Customer }
 
@@ -20,6 +21,8 @@ export function CustomerView({ customer }: Props) {
     customer.patience > 50 ? '#22c55e' :
     customer.patience > 20 ? '#eab308' : '#ef4444';
 
+  const dishPrice = MENU.find((m) => m.name === customer.menuItem)?.price;
+
   return (
     <div
       className="absolute flex flex-col items-center pointer-events-none select-none"
@@ -37,7 +40,7 @@ export function CustomerView({ customer }: Props) {
         fontFamily: 'monospace', whiteSpace: 'nowrap',
         background: 'rgba(0,0,0,0.5)', padding: '0 3px', borderRadius: 2,
       }}>
-        {customer.menuItem}
+        {customer.menuItem}{dishPrice !== undefined ? ` $${dishPrice}` : ''}
       </div>
 
       {/* Patience bar */}

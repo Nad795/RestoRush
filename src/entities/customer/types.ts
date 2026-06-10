@@ -10,9 +10,12 @@ export type CustomerState =
 
 export type Direction = 'left' | 'right' | 'up' | 'down';
 
+export type CustomerSource = 'loyalty' | 'base';
+
 export interface Customer {
   id: string;
   state: CustomerState;
+  source: CustomerSource;
   tableId: string | null;
   orderId: string | null;
   patience: number;

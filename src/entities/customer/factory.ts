@@ -1,21 +1,21 @@
 import { nextId } from '../../utils/idGenerator';
-import { randomBetween } from '../../utils/randomUtils';
-import type { Customer } from './types';
+import { randomBetween, randomItem } from '../../utils/randomUtils';
+import { MENU } from '../../utils/menu';
+import type { Customer, CustomerSource } from './types';
 
-const MENU_ITEMS = ['Burger', 'Pizza', 'Pasta', 'Salad', 'Steak', 'Sushi', 'Tacos'];
-
-export function createCustomer(): Customer {
+export function createCustomer(source: CustomerSource = 'base'): Customer {
   return {
     id: nextId('customer'),
     state: 'SPAWN',
+    source,
     tableId: null,
     orderId: null,
     patience: randomBetween(60, 100),
     happiness: 100,
-    spendingAmount: randomBetween(10, 40),
+    spendingAmount: 0, // set from order.price once the order is served
     waitTimer: 0,
     eatTimer: 0,
-    menuItem: MENU_ITEMS[Math.floor(Math.random() * MENU_ITEMS.length)],
+    menuItem: randomItem(MENU).name,
     posX: 685,
     posY: 210,
     path: [],
