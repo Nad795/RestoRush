@@ -1,19 +1,23 @@
 // All timing values are in real milliseconds (simulation speed scales them)
 
 export const SPAWN_INTERVAL_MS   = 6000;   // new customer every 6s (slightly slower than Stage 4)
-export const PATIENCE_DRAIN_PER_S = 3;     // 3pts/s — gives ~27s before anger at patience=100
+export const PATIENCE_DRAIN_PER_S = 1.5;   // 1.5pts/s — gives ~53s before anger at patience=100
 export const HAPPINESS_DRAIN_PER_S = 3;
 
-export const ORDER_WAIT_MS  = 2500;        // waiter walks to table
+export const ORDER_WAIT_MS  = 2500;        // waiter takes the order once at the table
 export const COOK_TIME_MS   = 7000;        // chef cooks one dish
-export const SERVE_WAIT_MS  = 2000;        // waiter delivers food
+export const SERVE_WAIT_MS  = 2000;        // waiter serves the food once back at the table
 export const EAT_TIME_MS    = 9000;        // customer eats (longer = table occupied longer = harder)
 export const LEAVE_PAUSE_MS = 1000;
 export const CLEAN_TABLE_MS = 2000;        // fast clean so tables recycle quickly
 
-// Total 1-waiter-1-chef service time: 2.5 + 7 + 2 = 11.5s
-// Patience 100→20 in ~26.7s — leaves ~15s buffer, comfortable with 1 staff each
-// Patience 60→20 in ~13.3s — tight! second queued customer will often get angry
+// Waiter transitions are arrival-gated (waiterSystem waits for the walk along
+// buildPath() to actually finish before starting these timers), so a full
+// cycle for the nearest table is roughly:
+//   walk-to-table (~4.5s) + ORDER_WAIT (2.5s) + walk-to-kitchen (~4.5s)
+//   + remaining cook time + walk-to-table (~4.5s) + SERVE_WAIT (2s) ≈ 22s
+// (farther tables take longer). Patience 100→20 in ~53.3s — leaves a healthy
+// buffer even for the lowest starting patience (60→20 in ~26.7s).
 
 // Anger / leaving thresholds
 export const PATIENCE_ANGER_THRESHOLD = 20;

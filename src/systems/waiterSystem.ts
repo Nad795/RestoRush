@@ -47,6 +47,11 @@ export function runWaiterSystem(delta: number): void {
       }
 
       case 'TAKE_ORDER': {
+        // Wait until the waiter has actually walked to the table before
+        // starting the "taking the order" timer.
+        const arrived = waiter.pathIndex >= waiter.path.length;
+        if (!arrived) break;
+
         const newTimer = waiter.taskTimer + delta;
         if (newTimer >= ORDER_WAIT_MS) {
           // Send ticket to kitchen
@@ -73,7 +78,11 @@ export function runWaiterSystem(delta: number): void {
       }
 
       case 'DELIVER_TO_KITCHEN': {
-        // Instant — waiter dropped off ticket, now waits for food
+        // Wait until the waiter has actually walked back to the kitchen
+        // before handing the ticket to the chef and waiting for food.
+        const arrived = waiter.pathIndex >= waiter.path.length;
+        if (!arrived) break;
+
         updateWaiter(waiter.id, {
           state: stepEntity(WAITER_FSM_CONFIG, 'DELIVER_TO_KITCHEN', 'PICKUP_FOOD'),
           taskTimer: 0,
@@ -115,6 +124,11 @@ export function runWaiterSystem(delta: number): void {
       }
 
       case 'SERVE_FOOD': {
+        // Wait until the waiter has actually walked to the table before
+        // starting the "serving the food" timer.
+        const arrived = waiter.pathIndex >= waiter.path.length;
+        if (!arrived) break;
+
         const newTimer = waiter.taskTimer + delta;
         if (newTimer >= SERVE_WAIT_MS) {
           if (waiter.assignedOrderId) {
