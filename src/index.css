@@ -22,3 +22,10 @@ body {
 }
 .walk-leg-a { animation: walk-leg-a 0.28s infinite linear; }
 .walk-leg-b { animation: walk-leg-b 0.28s infinite linear; }
+
+/* Safe area for notched phones */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

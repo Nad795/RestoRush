@@ -1,12 +1,12 @@
 export interface Point { x: number; y: number }
 
 // Vertical corridors (characters move vertically along these X positions)
-export const VERT_AISLES = [30, 170, 330, 490, 650];
+// Shifted right to stay within dining area (kitchen takes 0–100px on the left)
+export const VERT_AISLES = [150, 293, 453, 613, 773, 910];
 
 // Horizontal corridors (characters move horizontally along these Y positions)
-// y=18 top, y=110 between row0-row1, y=200 between row1-row2,
-// y=290 between row2-row3, y=380 above kitchen entrance
-export const HORIZ_AISLES = [18, 110, 200, 290, 380];
+// First aisle below the 60px top wall; last aisle above floor bottom
+export const HORIZ_AISLES = [80, 180, 300, 420, 540, 620];
 
 function nearest(arr: number[], val: number): number {
   return arr.reduce((a, b) => (Math.abs(b - val) < Math.abs(a - val) ? b : a));

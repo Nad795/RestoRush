@@ -29,6 +29,8 @@ export function CustomerView({ customer }: Props) {
       style={{
         left: Math.round(customer.posX) - SPRITE_W / 2,
         top:  Math.round(customer.posY) - SPRITE_H,
+        width: SPRITE_W,
+        overflow: 'visible',
         zIndex: 20,
       }}
     >

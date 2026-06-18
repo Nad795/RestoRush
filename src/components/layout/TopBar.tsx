@@ -15,38 +15,38 @@ export function TopBar() {
 
   return (
     <div className="bg-gray-900 border-b border-gray-700">
-      <div className="flex items-center justify-between px-4 h-12">
-        <h1 className="text-yellow-400 font-bold text-base tracking-wide">🍽 RestoRush</h1>
+      <div className="flex items-center justify-between px-2 md:px-4 h-10 md:h-12">
+        <h1 className="text-yellow-400 font-bold text-sm md:text-base tracking-wide">🍽 RestoRush</h1>
 
-        <div className="flex items-center divide-x divide-gray-700 text-sm">
+        <div className="flex items-center divide-x divide-gray-700 text-xs md:text-sm">
           {/* Money */}
-          <div className="flex flex-col items-center px-4">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Money</span>
+          <div className="flex flex-col items-center px-2 md:px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider hidden md:block">Money</span>
             <span className="font-bold text-green-400">${money}</span>
           </div>
 
           {/* Rating */}
-          <div className="flex flex-col items-center px-4">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Rating</span>
+          <div className="flex flex-col items-center px-2 md:px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider hidden md:block">Rating</span>
             <span className={`font-bold text-sm ${ratingColor}`}>
-              {stars} <span className="text-xs opacity-60">{rating.toFixed(1)}</span>
+              {stars} <span className="text-xs opacity-60 hidden md:inline">{rating.toFixed(1)}</span>
             </span>
           </div>
 
-          {/* Customers */}
-          <div className="flex flex-col items-center px-4">
+          {/* Customers — hidden on mobile */}
+          <div className="hidden md:flex flex-col items-center px-4">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider">Customers</span>
             <span className="font-bold text-white">{active}</span>
           </div>
 
           {/* Day */}
-          <div className="flex flex-col items-center px-4">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wider">Day</span>
-            <span className="font-bold text-white">{day}</span>
+          <div className="flex flex-col items-center px-2 md:px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider hidden md:block">Day</span>
+            <span className="font-bold text-white">Day {day}</span>
           </div>
 
-          {/* Speed indicator */}
-          <div className="flex flex-col items-center px-4">
+          {/* Speed — hidden on mobile */}
+          <div className="hidden md:flex flex-col items-center px-4">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider">Speed</span>
             <span className="font-bold text-blue-400">{speed}×</span>
           </div>

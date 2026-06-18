@@ -1,7 +1,12 @@
 import type { Direction } from '../entities/customer/types';
 import { useSimulationStore } from '../store/useSimulationStore';
+import { FLOOR_W, FLOOR_H, KITCHEN_W, WALL_H } from '../utils/constants';
 
 const WALK_SPEED = 90; // px per real-second (speed multiplier applied by caller)
+
+function clamp(val: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, val));
+}
 
 interface MovableEntity {
   id: string;
@@ -25,21 +30,20 @@ function stepEntity(
   // Axis-aligned: move horizontally first, then vertically
   if (Math.abs(dx) > 0.5) {
     const step = Math.min(Math.abs(dx), moveAmount) * Math.sign(dx);
-    const newX = entity.posX + step;
-    // Snap to target if very close to avoid floating-point jitter
-    const snapped = Math.abs(newX - target.x) < 1;
+    const rawX = entity.posX + step;
+    const snapped = Math.abs(rawX - target.x) < 1;
     return {
-      posX: snapped ? target.x : newX,
+      posX: clamp(snapped ? target.x : rawX, KITCHEN_W, FLOOR_W),
       direction: dx > 0 ? 'right' : 'left',
     };
   }
 
   if (Math.abs(dy) > 0.5) {
     const step = Math.min(Math.abs(dy), moveAmount) * Math.sign(dy);
-    const newY = entity.posY + step;
-    const snapped = Math.abs(newY - target.y) < 1;
+    const rawY = entity.posY + step;
+    const snapped = Math.abs(rawY - target.y) < 1;
     return {
-      posY: snapped ? target.y : newY,
+      posY: clamp(snapped ? target.y : rawY, WALL_H, FLOOR_H),
       direction: dy > 0 ? 'down' : 'up',
     };
   }

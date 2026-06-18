@@ -59,9 +59,11 @@ export const LOYALTY_MAX = 100;                  // cap; also denominator for tr
 export const RATING_SPAWN_MULT_MIN = 0.5;  // at rating = 1
 export const RATING_SPAWN_MULT_MAX = 1.5;  // at rating = 5
 
-// Floor layout coordinates (pixels)
-export const FLOOR_W = 720;
-export const FLOOR_H = 480;
-export const KITCHEN_Y = 456;         // waiter/chef idle Y
-export const ENTRANCE_X = 685;
-export const ENTRANCE_Y = 210;
+// Floor layout coordinates (pixels) — virtual resolution, CSS-scaled to fill container
+export const FLOOR_W = 960;
+export const FLOOR_H = 640;
+export const WALL_H = 60;             // top wall height (windows/decorations, not walkable)
+export const KITCHEN_W = 100;         // vertical kitchen strip width (left side)
+export const KITCHEN_PASS_X = 110;    // x where waiters idle near kitchen pass-through
+export const ENTRANCE_X = 935;
+export const ENTRANCE_Y = 320;

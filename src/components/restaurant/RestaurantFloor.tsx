@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect } from 'react';
 import { useSimulationStore } from '../../store/useSimulationStore';
 import { TableView } from './TableView';
 import { CustomerView } from './CustomerView';
@@ -5,10 +6,7 @@ import { WaiterView } from './WaiterView';
 import { ChefView } from './ChefView';
 import { KitchenView } from './KitchenView';
 import { FloorDecor } from './FloorDecor';
-import { FLOOR_W, FLOOR_H } from '../../utils/constants';
-
-const KITCHEN_H = 64;
-const DINING_H  = FLOOR_H - KITCHEN_H;
+import { FLOOR_W, FLOOR_H, KITCHEN_W, WALL_H } from '../../utils/constants';
 
 export function RestaurantFloor() {
   const tables    = useSimulationStore((s) => s.tables);
@@ -20,21 +18,81 @@ export function RestaurantFloor() {
     (c) => c.state !== 'LEAVING' || c.pathIndex < c.path.length,
   );
 
+  // Responsive scaling: measure container and scale the virtual-resolution game div
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const { width, height } = entries[0].contentRect;
+      const padding = 16;
+      setScale(Math.min((width - padding) / FLOOR_W, (height - padding) / FLOOR_H));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="flex-1 bg-gray-900 overflow-hidden flex items-center justify-center p-2">
+    <div ref={containerRef} className="flex-1 bg-gray-900 overflow-hidden flex items-center justify-center p-1 md:p-2">
       <div
         className="relative border-2 border-gray-700 flex-shrink-0"
-        style={{ width: FLOOR_W, height: FLOOR_H, imageRendering: 'pixelated' }}
+        style={{
+          width: FLOOR_W,
+          height: FLOOR_H,
+          imageRendering: 'pixelated',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+        }}
       >
-        {/* ── Dining floor tiles (warm checkerboard) ── */}
+        {/* ── Kitchen zone (vertical strip on the left) ── */}
         <div style={{
-          position:'absolute', top:0, left:0, right:0, height: DINING_H,
-          backgroundImage:
-            'repeating-conic-gradient(#3D2C1E 0% 25%, #2E2016 0% 50%)',
-          backgroundSize:'32px 32px',
+          position: 'absolute', left: 0, top: 0, bottom: 0, width: KITCHEN_W,
+          zIndex: 8,
+        }}>
+          <KitchenView chefs={chefs} />
+
+          {/* Chefs stacked vertically to align with their stoves */}
+          {chefs.map((c, i) => (
+            <div key={c.id} style={{ position: 'absolute', left: 12, top: 24 + i * 110, zIndex: 12 }}>
+              <ChefView chef={c} />
+            </div>
+          ))}
+        </div>
+
+        {/* ── Vertical divider between kitchen and dining ── */}
+        <div style={{
+          position: 'absolute', left: KITCHEN_W, top: 0, bottom: 0, width: 6,
+          background: '#4B5563',
+          borderLeft: '2px solid #6B7280',
+          borderRight: '2px solid #374151',
+          zIndex: 10,
         }} />
 
-        {/* Static interior decorations (includes wall strip) */}
+        {/* Kitchen label */}
+        <div style={{
+          position: 'absolute',
+          left: 8,
+          top: 8,
+          fontSize: 9,
+          color: '#6B7280',
+          fontFamily: 'monospace',
+          letterSpacing: 2,
+          zIndex: 11,
+        }}>
+          KITCHEN
+        </div>
+
+        {/* ── Dining floor tiles (warm checkerboard, below top wall) ── */}
+        <div style={{
+          position: 'absolute', top: WALL_H, left: KITCHEN_W + 6, right: 0, bottom: 0,
+          backgroundImage:
+            'repeating-conic-gradient(#3D2C1E 0% 25%, #2E2016 0% 50%)',
+          backgroundSize: '32px 32px',
+        }} />
+
+        {/* Static interior decorations */}
         <FloorDecor />
 
         {/* Tables */}
@@ -43,66 +101,9 @@ export function RestaurantFloor() {
         {/* Customers */}
         {activeCustomers.map((c) => <CustomerView key={c.id} customer={c} />)}
 
-        {/* Waiters — positioned by posX/posY across whole floor */}
+        {/* Waiters */}
         {waiters.map((w) => <WaiterView key={w.id} waiter={w} />)}
 
-        {/* ── Divider between dining and kitchen ── */}
-        <div style={{
-          position:'absolute', bottom: KITCHEN_H, left:0, right:0, height:6,
-          background:'#4B5563',
-          borderTop:'2px solid #6B7280',
-          borderBottom:'2px solid #374151',
-          zIndex:10,
-        }} />
-
-        {/* Serving hatch label */}
-        <div style={{
-          position:'absolute',
-          bottom: KITCHEN_H + 8,
-          right: 12,
-          fontSize: 9,
-          color: '#6B7280',
-          fontFamily: 'monospace',
-          letterSpacing: 2,
-          zIndex: 11,
-        }}>
-          KITCHEN →
-        </div>
-
-        {/* ── Kitchen zone ── */}
-        <div style={{
-          position:'absolute', bottom:0, left:0, right:0, height: KITCHEN_H,
-          zIndex: 8,
-        }}>
-          <KitchenView chefs={chefs} floorW={FLOOR_W} />
-
-          {/* Chefs positioned to align with their stoves (stove x = 16 + i*72) */}
-          {chefs.map((c, i) => (
-            <div key={c.id} style={{ position:'absolute', left: 16 + i * 72, bottom: 4, zIndex: 12 }}>
-              <ChefView chef={c} />
-            </div>
-          ))}
-        </div>
-
-        {/* Entrance door (right wall) — 18px wide, centred on ENTRANCE_Y=210 */}
-        <div style={{
-          position:'absolute', right:0, top:178, width:18, height:64,
-          background:'#8B5E3C',
-          borderLeft:'3px solid #6B4226',
-          borderTop:'3px solid #A0724C',
-          borderBottom:'3px solid #5A3820',
-          zIndex:4,
-        }} />
-        {/* Door glass */}
-        <div style={{
-          position:'absolute', right:2, top:184, width:10, height:50,
-          background:'rgba(180,220,255,0.25)', zIndex:5,
-        }} />
-        {/* Door knob */}
-        <div style={{
-          position:'absolute', right:13, top:207, width:4, height:4,
-          background:'#D4A835', zIndex:6,
-        }} />
       </div>
     </div>
   );

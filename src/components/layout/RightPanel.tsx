@@ -3,7 +3,13 @@ import { useRestaurantStore } from '../../store/useRestaurantStore';
 import { OrderQueue } from '../hud/OrderQueue';
 import { LOYALTY_MAX } from '../../utils/constants';
 
-export function RightPanel() {
+interface Props {
+  isMobile: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function RightPanel({ isMobile, isOpen, onClose }: Props) {
   const customers = useSimulationStore((s) => s.customers);
   const waiters   = useSimulationStore((s) => s.waiters);
   const chefs     = useSimulationStore((s) => s.chefs);
@@ -11,8 +17,29 @@ export function RightPanel() {
 
   const waiting = customers.filter((c) => c.state === 'WAITING' || c.state === 'ANGRY');
 
+  const desktopClass = 'w-56 bg-gray-900 border-l border-gray-700 flex flex-col gap-4 p-3 overflow-y-auto';
+
+  const mobileClass = [
+    'fixed top-0 right-0 bottom-0 w-72 max-w-[85vw] bg-gray-900',
+    'flex flex-col gap-4 p-3 overflow-y-auto',
+    'transition-transform duration-200 ease-out',
+    isOpen ? 'translate-x-0' : 'translate-x-full',
+  ].join(' ');
+
   return (
-    <div className="w-56 bg-gray-900 border-l border-gray-700 flex flex-col gap-4 p-3 overflow-y-auto">
+    <div
+      className={isMobile ? mobileClass : desktopClass}
+      style={isMobile ? { zIndex: 40 } : undefined}
+    >
+      {isMobile && (
+        <button
+          onClick={onClose}
+          className="self-end text-gray-400 active:text-white p-2 -mt-1 -mr-1 text-lg"
+        >
+          ✕
+        </button>
+      )}
+
       <OrderQueue />
 
       <div>

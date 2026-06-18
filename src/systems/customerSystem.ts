@@ -17,7 +17,7 @@ import {
 } from '../utils/constants';
 
 // Customer approaches from the LEFT side of their table (leaves aisle clear on right for waiter)
-const SEAT_OFFSET_X = -42;
+const SEAT_OFFSET_X = -52;
 const SEAT_OFFSET_Y =  0;
 
 export function runCustomerSystem(delta: number): void {
@@ -61,6 +61,8 @@ export function runCustomerSystem(delta: number): void {
       }
 
       case 'ORDERING': {
+        const seated = customer.pathIndex >= customer.path.length;
+        if (!seated) break;
         if (!customer.orderId && customer.tableId) {
           const order = createOrder(customer.id, customer.tableId, customer.menuItem);
           addOrder(order);

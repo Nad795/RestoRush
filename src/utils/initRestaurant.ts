@@ -9,7 +9,7 @@ export function initRestaurant(): void {
   // Only initialise once (idempotent guard)
   if (store.tables.length > 0) return;
 
-  for (let i = 0; i < 4; i++) store.addTable(createTable(i));
+  for (let i = 0; i < 5; i++) store.addTable(createTable(i));
   store.addWaiter(createWaiter());
   store.addChef(createChef());
 }

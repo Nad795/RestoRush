@@ -7,7 +7,7 @@ import { createTable } from '../../entities/table/factory';
 import { createWaiter } from '../../entities/waiter/factory';
 import { createChef } from '../../entities/chef/factory';
 import { createCustomer } from '../../entities/customer/factory';
-import { KITCHEN_Y } from '../../utils/constants';
+import { KITCHEN_PASS_X } from '../../utils/constants';
 
 // End-to-end trace of one customer through the full
 // order -> kitchen -> chef -> waiter -> serve -> eat -> pay -> leave loop.
@@ -127,9 +127,9 @@ describe('full order flow (1 table, 1 waiter, 1 chef, 1 customer)', () => {
     expect(waiterPosByState['TAKE_ORDER']!.x).toBeCloseTo(tableDest.x, 0);
     expect(waiterPosByState['TAKE_ORDER']!.y).toBeCloseTo(tableDest.y, 0);
 
-    // By the end of DELIVER_TO_KITCHEN/PICKUP_FOOD, waiter should be at the kitchen row
+    // By the end of DELIVER_TO_KITCHEN/PICKUP_FOOD, waiter should be at the kitchen pass-through
     expect(waiterPosByState['PICKUP_FOOD']).toBeDefined();
-    expect(waiterPosByState['PICKUP_FOOD']!.y).toBeCloseTo(KITCHEN_Y, 0);
+    expect(waiterPosByState['PICKUP_FOOD']!.x).toBeCloseTo(KITCHEN_PASS_X, 0);
 
     // By the end of SERVE_FOOD, waiter should be back at the table
     expect(waiterPosByState['SERVE_FOOD']).toBeDefined();

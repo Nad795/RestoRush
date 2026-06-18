@@ -1,4 +1,5 @@
 // Static decorative elements — pixel art, no game logic
+import { KITCHEN_W, WALL_H } from '../../utils/constants';
 
 function PixelPlant({ x, y }: { x: number; y: number }) {
   return (
@@ -62,19 +63,16 @@ function PixelChalkboard({ x, y }: { x: number; y: number }) {
         border:'4px solid #5C3D1E' }}>
         {/* Chalk surface */}
         <div style={{ position:'absolute', inset:4, background:'#1A2E1A' }}>
-          {/* "TODAY'S MENU" text (pixel art lines) */}
           <div style={{ position:'absolute', top:3, left:4, right:4, height:2,
             background:'rgba(255,255,200,0.6)' }} />
           {['Burger $12','Pizza $15','Steak $28','Sushi $22'].map((_, i) => (
             <div key={i} style={{ position:'absolute', left:4, top:8+i*6, right:4, height:2,
               background:'rgba(255,255,255,0.25)' }} />
           ))}
-          {/* Chalk dust effect */}
           <div style={{ position:'absolute', bottom:2, left:2, width:20, height:2,
             background:'rgba(255,255,255,0.15)' }} />
         </div>
       </div>
-      {/* Chalk ledge */}
       <div style={{ position:'absolute', bottom:-2, left:4, width:16, height:4,
         background:'#FFFFFF', opacity:0.6 }} />
     </div>
@@ -83,32 +81,48 @@ function PixelChalkboard({ x, y }: { x: number; y: number }) {
 
 function PixelMat({ x, y }: { x: number; y: number }) {
   return (
-    <div style={{ position:'absolute', left:x, top:y, width:40, height:16, imageRendering:'pixelated', zIndex:1 }}>
+    <div style={{ position:'absolute', left:x, top:y, width:24, height:56, imageRendering:'pixelated', zIndex:1 }}>
       <div style={{ position:'absolute', inset:0, background:'#8B1A1A',
         border:'2px solid #6B1010' }}>
-        {/* Stripes */}
-        {[4,10,16,22,28,34].map((sx,i)=>(
-          <div key={i} style={{ position:'absolute', left:sx, top:2, width:2, bottom:2,
+        {[4,10,16,22,28,34,40,46].map((sy,i)=>(
+          <div key={i} style={{ position:'absolute', top:sy, left:2, height:2, right:2,
             background: i%2===0 ? '#A02020' : '#7B1515' }} />
         ))}
-        {/* Fringe */}
-        <div style={{ position:'absolute', bottom:-2, left:0, right:0, height:2,
-          backgroundImage:'repeating-linear-gradient(90deg,#8B1A1A 0px,#8B1A1A 4px,transparent 4px,transparent 6px)',
+        <div style={{ position:'absolute', right:-2, top:0, bottom:0, width:2,
+          backgroundImage:'repeating-linear-gradient(180deg,#8B1A1A 0px,#8B1A1A 4px,transparent 4px,transparent 6px)',
         }} />
       </div>
     </div>
   );
 }
 
-function WallStrip() {
+function TopWall() {
+  const left = KITCHEN_W + 6;
   return (
-    <div style={{ position:'absolute', top:0, left:0, right:0, height:14, zIndex:2 }}>
-      {/* Baseboard / wall top */}
-      <div style={{ position:'absolute', inset:0, background:'#2D3B2A',
-        borderBottom:'3px solid #3D4F38' }} />
-      {/* Crown moulding detail */}
+    <div style={{ position:'absolute', top:0, left, right:0, height: WALL_H, zIndex:7, imageRendering:'pixelated' }}>
+      {/* Wall background */}
+      <div style={{ position:'absolute', inset:0, background:'#2D3B2A' }} />
+
+      {/* Wainscoting / lower panel */}
+      <div style={{ position:'absolute', bottom:0, left:0, right:0, height:12,
+        background:'#3D4F38', borderTop:'2px solid #4A6040' }} />
+
+      {/* Crown moulding at bottom edge */}
       <div style={{ position:'absolute', bottom:0, left:0, right:0, height:3,
         background:'#4A6040' }} />
+
+      {/* Upper trim */}
+      <div style={{ position:'absolute', top:0, left:0, right:0, height:4,
+        background:'#1F2B1D' }} />
+
+      {/* Windows embedded in the wall — evenly spaced */}
+      <PixelWindow x={97}  y={12} />
+      <PixelWindow x={246} y={12} />
+      <PixelWindow x={395} y={12} />
+      <PixelWindow x={544} y={12} />
+
+      {/* Chalkboard menu embedded in wall near entrance */}
+      <PixelChalkboard x={693} y={8} />
     </div>
   );
 }
@@ -116,21 +130,14 @@ function WallStrip() {
 export function FloorDecor() {
   return (
     <>
-      <WallStrip />
+      <TopWall />
 
-      {/* Windows on left wall */}
-      <PixelWindow x={8}  y={20} />
-      <PixelWindow x={8}  y={70} />
+      {/* Plants on the dining floor, below the wall */}
+      <PixelPlant x={KITCHEN_W + 14} y={WALL_H + 4} />
+      <PixelPlant x={920} y={WALL_H + 4} />
 
-      {/* Plants: left one sits below the two windows; right one in top-right corner */}
-      <PixelPlant x={4}   y={120} />
-      <PixelPlant x={696} y={16} />
-
-      {/* Chalkboard menu near entrance */}
-      <PixelChalkboard x={614} y={20} />
-
-      {/* Entrance mat */}
-      <PixelMat x={650} y={195} />
+      {/* Entrance mat — vertical, centered on entrance */}
+      <PixelMat x={928} y={292} />
     </>
   );
 }

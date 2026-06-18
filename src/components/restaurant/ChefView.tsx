@@ -18,7 +18,7 @@ export function ChefView({ chef }: Props) {
   return (
     <div
       className="flex flex-col items-center select-none"
-      style={{ marginRight: 16 }}
+      style={{ marginBottom: 8 }}
     >
       <PixelSprite
         type="chef"
