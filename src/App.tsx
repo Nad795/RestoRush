@@ -8,6 +8,7 @@ import { GameOverModal } from './components/modals/GameOverModal';
 import { DaySummaryModal } from './components/modals/DaySummaryModal';
 import { StoryDialogueModal } from './components/modals/StoryDialogueModal';
 import { MainMenu } from './components/MainMenu';
+import { CreditsScreen } from './components/CreditsScreen';
 import { useSimulationTick } from './hooks/useSimulationTick';
 import { useIsMobile } from './hooks/useIsMobile';
 import { useRestaurantStore } from './store/useRestaurantStore';
@@ -27,6 +28,7 @@ export default function App() {
   const closeDrawer = () => setDrawer('none');
 
   if (screen === 'menu') return <MainMenu />;
+  if (screen === 'credits') return <CreditsScreen />;
 
   return (
     <div className="relative flex flex-col h-screen bg-gray-800 text-white overflow-hidden">

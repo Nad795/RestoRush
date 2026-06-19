@@ -41,6 +41,14 @@ export function MainMenu() {
           Start Game
         </button>
 
+        {/* Credits button */}
+        <button
+          onClick={() => useRestaurantStore.setState({ screen: 'credits' })}
+          className="px-6 py-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-800 text-gray-300 text-sm font-medium rounded-lg transition-all hover:scale-105 mb-6"
+        >
+          Credits
+        </button>
+
         {/* How to play */}
         <div className="bg-gray-800/80 border border-gray-700 rounded-xl p-5 w-full">
           <h2 className="text-yellow-400 font-bold text-sm uppercase tracking-wider mb-3">How to Play</h2>

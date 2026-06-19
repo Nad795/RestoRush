@@ -21,7 +21,7 @@ export interface DaySummary {
   wages: number;
 }
 
-export type GameScreen = 'menu' | 'playing';
+export type GameScreen = 'menu' | 'playing' | 'credits';
 
 interface RestaurantState {
   screen: GameScreen;
