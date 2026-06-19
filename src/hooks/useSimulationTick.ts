@@ -22,9 +22,9 @@ export function useSimulationTick(): void {
       const rawDelta = Math.min(now - lastTime, 100);
       lastTime = now;
 
-      const { paused, speed } = useRestaurantStore.getState();
+      const { paused, speed, screen } = useRestaurantStore.getState();
 
-      if (!paused) {
+      if (!paused && screen === 'playing') {
         // Accumulate real time and drain in fixed simulation steps
         simAccRef.current += rawDelta;
         while (simAccRef.current >= SIM_STEP_MS) {

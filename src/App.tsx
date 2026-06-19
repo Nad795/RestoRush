@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { TopBar } from './components/layout/TopBar';
 import { BottomBar } from './components/layout/BottomBar';
 import { RightPanel } from './components/layout/RightPanel';
@@ -6,14 +6,16 @@ import { ManagementPanel } from './components/layout/ManagementPanel';
 import { RestaurantFloor } from './components/restaurant/RestaurantFloor';
 import { GameOverModal } from './components/modals/GameOverModal';
 import { DaySummaryModal } from './components/modals/DaySummaryModal';
+import { StoryDialogueModal } from './components/modals/StoryDialogueModal';
+import { MainMenu } from './components/MainMenu';
 import { useSimulationTick } from './hooks/useSimulationTick';
-import { initRestaurant } from './utils/initRestaurant';
 import { useIsMobile } from './hooks/useIsMobile';
+import { useRestaurantStore } from './store/useRestaurantStore';
 
 type Drawer = 'none' | 'right' | 'manage';
 
 export default function App() {
-  useEffect(() => { initRestaurant(); }, []);
+  const screen = useRestaurantStore((s) => s.screen);
   useSimulationTick();
 
   const isMobile = useIsMobile();
@@ -23,6 +25,8 @@ export default function App() {
     setDrawer((prev) => (prev === d ? 'none' : d));
 
   const closeDrawer = () => setDrawer('none');
+
+  if (screen === 'menu') return <MainMenu />;
 
   return (
     <div className="relative flex flex-col h-screen bg-gray-800 text-white overflow-hidden">
@@ -75,6 +79,7 @@ export default function App() {
 
       <DaySummaryModal />
       <GameOverModal />
+      <StoryDialogueModal />
     </div>
   );
 }

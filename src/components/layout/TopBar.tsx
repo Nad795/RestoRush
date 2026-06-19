@@ -1,11 +1,12 @@
 import { useRestaurantStore } from '../../store/useRestaurantStore';
 import { useSimulationStore } from '../../store/useSimulationStore';
-import { DAY_DURATION_MS } from '../../utils/constants';
+import { DAY_DURATION_MS, WAITER_DAILY_WAGE, CHEF_DAILY_WAGE } from '../../utils/constants';
 
 export function TopBar() {
   const { money, rating, day, dayTimer, speed } = useRestaurantStore();
-  const customers = useSimulationStore((s) => s.customers);
+  const { customers, waiters, chefs } = useSimulationStore();
   const active = customers.filter((c) => c.state !== 'LEAVING').length;
+  const dailyWages = waiters.length * WAITER_DAILY_WAGE + chefs.length * CHEF_DAILY_WAGE;
 
   const ratingColor =
     rating >= 4 ? 'text-green-400' : rating >= 2.5 ? 'text-yellow-400' : 'text-red-400';
@@ -23,6 +24,12 @@ export function TopBar() {
           <div className="flex flex-col items-center px-2 md:px-4">
             <span className="text-[10px] text-gray-400 uppercase tracking-wider hidden md:block">Money</span>
             <span className="font-bold text-green-400">${money}</span>
+          </div>
+
+          {/* Daily Wages */}
+          <div className="flex flex-col items-center px-2 md:px-4">
+            <span className="text-[10px] text-gray-400 uppercase tracking-wider hidden md:block">Wages</span>
+            <span className="font-bold text-red-400">-${dailyWages}/day</span>
           </div>
 
           {/* Rating */}
