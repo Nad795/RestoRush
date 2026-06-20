@@ -49,6 +49,24 @@ export function CreditsScreen() {
           ))}
         </div>
 
+        <div className="bg-gray-800/80 border border-gray-700 rounded-xl p-5 w-full mb-8">
+          <h2 className="text-lg font-bold text-yellow-400 mb-2">Music</h2>
+          <p className="text-gray-300 text-sm">
+            "Vibing Over Venus" by Kevin MacLeod
+          </p>
+          <p className="text-gray-500 text-xs mt-1">
+            Licensed under Creative Commons: By Attribution 4.0 —{' '}
+            <a
+              href="https://incompetech.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+            >
+              incompetech.com
+            </a>
+          </p>
+        </div>
+
         <button
           onClick={() => setScreen('menu')}
           className="px-8 py-3 bg-gray-700 hover:bg-gray-600 active:bg-gray-800 text-white font-semibold rounded-xl transition-all hover:scale-105"
