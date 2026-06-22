@@ -41,7 +41,7 @@ export const DAY_DURATION_MS = 90_000;     // 90s real-time = 1 game day at 1×
 
 // Win/lose conditions
 export const GAME_LENGTH_DAYS = 21;        // game ends after this many days
-export const GOAL_MONEY = 5000;            // win if money >= this by end of day 21
+export const GOAL_MONEY = 1000;            // win if money >= this by end of day 21
 export const RATING_LOSS_THRESHOLD = 1.0;  // instant loss if rating drops to/below this
 
 // Daily staff wages — deducted from money on each day rollover. Meaningfully
